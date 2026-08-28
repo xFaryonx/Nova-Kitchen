@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Asistente</title>
+<meta name="description" content="Asistente culinario de Nova. Escribe en lenguaje natural y ejecuta escandallos, producción, stock y más." />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/landing.css" />
+<link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Asistente</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Buenas, <span id="greetName">chef</span></span>
+        <h1 id="greetLine">¿Qué cocinamos hoy?</h1>
+        <p>Escribe cualquier orden en lenguaje natural. Nova identifica el módulo, recupera tus datos y te devuelve una respuesta lista para el pase.</p>
+      </div>
+
+      <div class="ask" data-testid="assistant-panel">
+        <form class="ask__form" id="askForm">
+          <span class="ask__prompt">›</span>
+          <input class="ask__input" id="askInput" type="text" autocomplete="off" placeholder="Ej. Hazme un escandallo para una lasaña de 40 raciones" data-testid="assistant-input" />
+          <button class="ask__send" type="submit" aria-label="Enviar" data-testid="assistant-send"><svg width="18" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2"/></svg></button>
+        </form>
+        <div class="ask__body" id="askBody"></div>
+      </div>
+
+      <div class="chips" id="chips">
+        <button class="chip" data-q="Hazme un escandallo para una lasaña de 40 raciones">Escandallo lasaña · 40 rac.</button>
+        <button class="chip" data-q="¿Qué puedo cocinar con este stock?">¿Qué cocino con mi stock?</button>
+        <button class="chip" data-q="Diseña una carta de otoño">Carta de otoño</button>
+        <button class="chip" data-q="Organiza la producción del viernes">Producción del viernes</button>
+        <button class="chip" data-q="Calcula el precio de venta del risotto con un 30% de margen">PVP risotto · 30%</button>
+        <button class="chip" data-q="Detecta los alérgenos de las croquetas">Alérgenos croquetas</button>
+        <button class="chip" data-q="Avisos de stock">Avisos de stock</button>
+        <button class="chip" data-q="Compara precios de proveedores">Comparar proveedores</button>
+      </div>
+
+      <div class="dash-grid">
+        <div class="panel r-app">
+          <div class="panel__title">Resumen del servicio <span class="tag tag--ok"><span class="dot"></span>En marcha</span></div>
+          <div class="kpis" style="margin-bottom:0;grid-template-columns:repeat(2,1fr)">
+            <div class="kpi"><span class="overline">Food cost medio</span><strong id="kpiFc">—</strong><small>objetivo ≤ 32%</small></div>
+            <div class="kpi"><span class="overline">Bajo mínimos</span><strong id="kpiLow">—</strong><small class="warn">requiere compra</small></div>
+            <div class="kpi"><span class="overline">Platos en carta</span><strong id="kpiDishes">—</strong><small>temporada activa</small></div>
+            <div class="kpi"><span class="overline">Registros APPCC</span><strong id="kpiApp">—</strong><small>hoy</small></div>
+          </div>
+        </div>
+        <div class="panel r-app">
+          <div class="panel__title">Memoria de Nova <button id="clearMem" class="tag" data-testid="clear-memory" style="cursor:pointer">Vaciar</button></div>
+          <div class="memlog" id="memlog"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/nova-ai.js"></script>
+<script src="js/console.js"></script>
+<script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("app");
+  const p=NovaApp.profile();
+  document.getElementById("greetName").textContent=p.name.split(" ")[0];
+  const hour=new Date().getHours();
+  document.getElementById("greetLine").textContent = hour<12?"¿Preparamos el mediodía?":hour<18?"¿Cómo va el servicio?":"¿Organizamos la noche?";
+
+  const form=document.getElementById("askForm"),input=document.getElementById("askInput"),body=document.getElementById("askBody");
+  const INSTANT=/instant/.test(location.search);
+  function go(q){
+    const res=window.NovaConsole.run(body,q,{instant:INSTANT,onDone:r=>{renderMem();}});
+    NovaApp.pushLog({q:q,module:res.module});
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
+  form.addEventListener("submit",e=>{e.preventDefault();if(input.value.trim()){go(input.value.trim());}});
+  document.getElementById("chips").addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(b){input.value=b.getAttribute("data-q");go(input.value);}});
+
+  // KPIs
+  const D=window.NOVA_DATA;
+  const fcs=D.menu.map(m=>{const r=D.recipeMap[m.recipe];const c=D.recipeCost(r.id,r.base);return (c.perPortion/m.pvp)*100;});
+  document.getElementById("kpiFc").textContent=Math.round(fcs.reduce((a,b)=>a+b,0)/fcs.length)+"%";
+  document.getElementById("kpiLow").textContent=D.stock.filter(s=>s.qty<s.min).length;
+  document.getElementById("kpiDishes").textContent=D.menu.length;
+  document.getElementById("kpiApp").textContent=D.appcc.length;
+
+  // Memoria
+  function renderMem(){
+    const log=NovaApp.log();const el=document.getElementById("memlog");
+    if(!log.length){el.innerHTML='<div class="memitem" style="color:var(--ink-3)">Aún no hay consultas. Prueba una orden arriba y Nova la recordará.</div>';return;}
+    el.innerHTML=log.map(e=>`<div class="memitem"><em>${e.module}</em> — ${e.q}<span>${new Date(e.t).toLocaleString("es-ES",{hour:"2-digit",minute:"2-digit",day:"2-digit",month:"short"})}</span></div>`).join("");
+  }
+  renderMem();
+  document.getElementById("clearMem").addEventListener("click",()=>{NovaApp.store.set("nova_log",[]);renderMem();NovaApp.toast("Memoria de consultas vaciada");});
+
+  // arranque con una consulta de ejemplo
+  input.value="Hazme un escandallo para una lasaña de 40 raciones";
+  if(INSTANT){go(input.value);} else {setTimeout(()=>go(input.value),400);}
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

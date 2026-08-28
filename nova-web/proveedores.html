@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Proveedores</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Proveedores</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Aprovisionamiento · 08</span>
+        <h1>El mejor precio, siempre visible</h1>
+        <p>Nova compara en vivo lo que te cobra cada proveedor por la misma referencia y resalta la opción más rentable. Sin llamadas ni hojas de cálculo.</p>
+      </div>
+      <div class="kpis r-app" id="cards" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr))"></div>
+      <div class="panel r-app" style="padding:0;margin-top:20px">
+        <div class="panel__title" style="padding:22px 24px 0">Comparativa de precios <span class="tag tag--ok">verde = mejor precio</span></div>
+        <div style="overflow-x:auto"><table class="tbl ai-table--sup" id="matrix"></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("proveedores");
+  const D=window.NOVA_DATA,eur=NovaApp.eur;
+  document.getElementById("cards").innerHTML=D.suppliers.map(s=>`<div class="kpi"><span class="overline">${s.tag}</span><strong style="font-size:1.4rem">${s.name}</strong><small>${Object.keys(s.prices).length} refs · entrega ${s.lead}d · mín ${eur(s.min)}</small></div>`).join("");
+  const items=["tomate","cebolla","salmon","gamba","ternera","cerdo","parmesano","nata","harina","aceite","arroz"];
+  const rows=items.map(id=>{
+    const prices=D.suppliers.map(s=>s.prices[id]);
+    const valid=prices.filter(p=>p!=null); if(!valid.length)return"";
+    const min=Math.min(...valid);
+    const tds=D.suppliers.map(s=>{const p=s.prices[id];return `<td class="r tnum ${p===min?'cell-best':''}">${p!=null?eur(p):'·'}</td>`;}).join("");
+    return `<tr><td><b>${D.ingMap[id].name}</b></td>${tds}</tr>`;
+  }).join("");
+  document.getElementById("matrix").innerHTML=`<thead><tr><th>Producto</th>${D.suppliers.map(s=>`<th class="r">${s.name.split(" ")[0]}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`;
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

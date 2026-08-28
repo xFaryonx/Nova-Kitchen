@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Recetas</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Recetas</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Recetario · 02</span>
+        <h1>Recetas que se adaptan solas</h1>
+        <p>Escala cualquier receta al número de raciones que necesites. Nova recalcula ingredientes, alérgenos y coste al instante, y guarda cada versión.</p>
+      </div>
+      <div class="two-col">
+        <div class="rlist r-app" id="rlist"></div>
+        <div class="panel r-app" id="detail"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("recetas");
+  const D=window.NOVA_DATA,eur=NovaApp.eur,num=NovaApp.num;
+  let cur=D.recipes[0], portions=cur.base;
+  const rlist=document.getElementById("rlist"),detail=document.getElementById("detail");
+  rlist.innerHTML=D.recipes.map(r=>`<button data-id="${r.id}" data-testid="recipe-${r.id}"><b>${r.name}</b><small>${r.cat} · base ${r.base} rac · ${r.minutes} min</small></button>`).join("");
+  function selectR(id){cur=D.recipeMap[id];portions=cur.base;render();rlist.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.id===id));}
+  rlist.addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(b)selectR(b.dataset.id);});
+  function render(){
+    const c=D.recipeCost(cur.id,portions);
+    const al=D.recipeAllergens(cur.id);
+    const badges=al.map(a=>`<span class="al-badge">${D.allergenLabels[a]}</span>`).join("")||'<span class="al-badge al-badge--ok">Sin alérgenos</span>';
+    const rows=c.lines.map(l=>`<tr><td>${l.name}</td><td class="r tnum">${num(l.qty,3)} ${l.unit}</td><td class="r tnum">${eur(l.cost)}</td></tr>`).join("");
+    detail.innerHTML=`
+      <div class="panel__title">${cur.name} <span class="tag">${cur.cat}</span></div>
+      <div class="ctrl-row" style="margin-bottom:20px">
+        <div class="field range-wrap"><label>Raciones · <span id="pv" class="mono">${portions}</span></label>
+          <input type="range" id="pr" min="1" max="120" value="${portions}" data-testid="portions-range"></div>
+        <div class="field"><label>Escala</label><div class="mono" style="font-size:1.1rem">×${num(portions/cur.base,2)}</div></div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><span class="overline">Coste total</span><strong>${eur(c.total)}</strong></div>
+        <div class="kpi"><span class="overline">Coste / ración</span><strong>${eur(c.perPortion)}</strong></div>
+        <div class="kpi"><span class="overline">Tiempo</span><strong>${cur.minutes}'</strong></div>
+      </div>
+      <div class="ai-cols" style="margin-top:8px">
+        <div><span class="overline">Ingredientes (${portions} rac)</span>
+          <table class="tbl" style="margin-top:12px"><tbody>${rows}</tbody></table></div>
+        <div><span class="overline">Elaboración</span>
+          <ol class="ai-steps" style="margin-top:12px">${cur.steps.map((s,i)=>`<li><span class="mono">${String(i+1).padStart(2,"0")}</span> ${s}</li>`).join("")}</ol>
+          <div style="margin-top:20px"><span class="overline">Alérgenos</span><div class="al-row" style="margin-top:10px">${badges}</div></div>
+        </div>
+      </div>
+      <button class="btn r-app" id="saveV" style="margin-top:22px" data-testid="save-version"><span>Guardar versión (${portions} rac)</span><span class="arw">→</span></button>`;
+    const pr=document.getElementById("pr");
+    pr.addEventListener("input",()=>{portions=+pr.value;document.getElementById("pv").textContent=portions;render();});
+    document.getElementById("saveV").addEventListener("click",()=>{const v=NovaApp.store.get("nova_versions",[]);v.unshift({recipe:cur.name,portions,when:new Date().toISOString()});NovaApp.store.set("nova_versions",v);NovaApp.toast("Versión guardada en memoria");});
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
+  selectR(cur.id);
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

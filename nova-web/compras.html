@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Compras</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Compras</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Compras · 09</span>
+        <h1>La lista se escribe sola</h1>
+        <p>Nova detecta lo que está bajo mínimos, calcula la cantidad a reponer y asigna el proveedor más económico de cada referencia. Tú solo confirmas.</p>
+      </div>
+      <div class="kpis r-app">
+        <div class="kpi"><span class="overline">Referencias a reponer</span><strong id="kRef">—</strong></div>
+        <div class="kpi"><span class="overline">Importe pendiente</span><strong id="kPend">—</strong></div>
+        <div class="kpi"><span class="overline">Proveedores implicados</span><strong id="kSup">—</strong></div>
+        <div class="kpi" style="background:var(--ink);color:#fff"><span class="overline" style="color:#8c887c">Total pedido</span><strong id="kTot" style="color:#fff">—</strong></div>
+      </div>
+      <div class="panel r-app" style="padding:0">
+        <table class="tbl"><thead><tr><th>✓</th><th>Producto</th><th>Reponer</th><th>Mejor proveedor</th><th>€/ud</th><th>Importe</th></tr></thead>
+        <tbody id="rows"></tbody></table>
+      </div>
+      <button class="btn r-app" id="order" style="margin-top:22px" data-testid="generate-order"><span>Generar pedido</span><span class="arw">→</span></button>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("compras");
+  const D=window.NOVA_DATA,eur=NovaApp.eur,num=NovaApp.num;
+  const need=D.stock.filter(s=>s.qty<s.min).map(s=>{
+    let best=null;D.suppliers.forEach(sup=>{const p=sup.prices[s.ing];if(p!=null&&(best===null||p<best.p))best={sup:sup.name,p};});
+    const qty=Math.max(s.min*2-s.qty,s.min);
+    return {ing:s.ing,name:D.ingMap[s.ing].name,unit:D.ingMap[s.ing].unit,qty,sup:best?best.sup:"—",price:best?best.p:0,amount:best?best.p*qty:0,checked:true};
+  });
+  function render(){
+    document.getElementById("rows").innerHTML=need.map((n,i)=>`<tr style="${n.checked?'':'opacity:.45'}"><td><input type="checkbox" ${n.checked?'checked':''} data-i="${i}" data-testid="buy-${n.ing}" style="width:18px;height:18px;accent-color:var(--ember)"></td><td><b>${n.name}</b></td><td class="r tnum">${num(n.qty,1)} ${n.unit}</td><td>${n.sup}</td><td class="r tnum">${eur(n.price)}</td><td class="r tnum">${eur(n.amount)}</td></tr>`).join("");
+    const active=need.filter(n=>n.checked);
+    const total=active.reduce((a,n)=>a+n.amount,0);
+    document.getElementById("kRef").textContent=need.length;
+    document.getElementById("kPend").textContent=active.length+" ítems";
+    document.getElementById("kSup").textContent=new Set(active.map(n=>n.sup)).size;
+    document.getElementById("kTot").textContent=eur(total);
+  }
+  document.getElementById("rows").addEventListener("change",e=>{const cb=e.target.closest("[data-i]");if(cb){need[+cb.dataset.i].checked=cb.checked;render();}});
+  document.getElementById("order").addEventListener("click",()=>{const n=need.filter(x=>x.checked).length;NovaApp.toast(`Pedido generado · ${n} referencias enviadas a proveedores`);});
+  render();
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

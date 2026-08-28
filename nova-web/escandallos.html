@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Escandallos</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Escandallos</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Rentabilidad · 01</span>
+        <h1>El margen, al céntimo</h1>
+        <p>Elige una receta, ajusta las raciones y tu margen objetivo. Nova desglosa el coste ingrediente a ingrediente y te da el precio de venta recomendado.</p>
+      </div>
+      <div class="ctrl-row r-app">
+        <div class="field"><label>Receta</label><select id="rSel" data-testid="esc-recipe"></select></div>
+        <div class="field"><label>Raciones</label><input type="number" id="pIn" min="1" max="500" value="40" data-testid="esc-portions"></div>
+        <div class="field range-wrap"><label>Margen objetivo · <span id="mv" class="mono">65%</span></label><input type="range" id="mR" min="20" max="80" value="65" data-testid="esc-margin"></div>
+      </div>
+      <div class="kpis r-app">
+        <div class="kpi"><span class="overline">Coste total</span><strong id="kTot">—</strong></div>
+        <div class="kpi"><span class="overline">Coste / ración</span><strong id="kPer">—</strong></div>
+        <div class="kpi" style="background:var(--ink);color:#fff"><span class="overline" style="color:#8c887c">PVP recomendado</span><strong id="kPvp" style="color:#fff">—</strong><small style="color:var(--ember)" id="kFc"></small></div>
+        <div class="kpi"><span class="overline">Beneficio / ración</span><strong id="kBen">—</strong></div>
+      </div>
+      <div class="panel r-app">
+        <div class="panel__title">Desglose de coste <span id="cnt" class="tag"></span></div>
+        <table class="tbl"><thead><tr><th>Ingrediente</th><th>Cantidad</th><th>€/ud</th><th>Coste</th><th>% coste</th></tr></thead>
+        <tbody id="rows"></tbody>
+        <tfoot><tr><th>Total</th><th></th><th></th><th class="tnum" id="ft"></th><th>100%</th></tr></tfoot></table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("escandallos");
+  const D=window.NOVA_DATA,eur=NovaApp.eur,num=NovaApp.num;
+  const rSel=document.getElementById("rSel"),pIn=document.getElementById("pIn"),mR=document.getElementById("mR");
+  rSel.innerHTML=D.recipes.map(r=>`<option value="${r.id}">${r.name}</option>`).join("");
+  rSel.value="lasana";
+  function render(){
+    const c=D.recipeCost(rSel.value, Math.max(1,+pIn.value||1));
+    const margin=+mR.value; document.getElementById("mv").textContent=margin+"%";
+    const pvp=D.pvpFromMargin(c.perPortion,margin);
+    document.getElementById("kTot").textContent=eur(c.total);
+    document.getElementById("kPer").textContent=eur(c.perPortion);
+    document.getElementById("kPvp").textContent=eur(pvp);
+    document.getElementById("kFc").textContent="food cost "+num(100-margin,0)+"%";
+    document.getElementById("kBen").textContent=eur(pvp-c.perPortion);
+    document.getElementById("cnt").textContent=c.lines.length+" ingredientes";
+    document.getElementById("ft").textContent=eur(c.total);
+    document.getElementById("rows").innerHTML=c.lines.sort((a,b)=>b.cost-a.cost).map(l=>`<tr><td>${l.name}</td><td class="r tnum">${num(l.qty,3)} ${l.unit}</td><td class="r tnum">${eur(l.unitPrice)}</td><td class="r tnum">${eur(l.cost)}</td><td class="r tnum">${num(l.cost/c.total*100,1)}%</td></tr>`).join("");
+  }
+  [rSel,pIn,mR].forEach(el=>el.addEventListener("input",render));
+  render();
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

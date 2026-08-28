@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — APPCC</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>APPCC</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Seguridad alimentaria · 06</span>
+        <h1>Trazabilidad sin papeleo</h1>
+        <p>Registra temperaturas y controles críticos. Nova evalúa cada lectura contra su límite y deja el histórico listo para inspección.</p>
+      </div>
+      <div class="kpis r-app">
+        <div class="kpi"><span class="overline">Registros hoy</span><strong id="kReg">—</strong></div>
+        <div class="kpi"><span class="overline">Conformes</span><strong id="kOk">—</strong><small>dentro de límite</small></div>
+        <div class="kpi"><span class="overline">Incidencias</span><strong id="kAl">—</strong><small class="warn">requieren acción</small></div>
+        <div class="kpi"><span class="overline">Cumplimiento</span><strong id="kPc">—</strong></div>
+      </div>
+      <div class="two-col">
+        <div class="panel r-app">
+          <div class="panel__title">Nuevo registro</div>
+          <div class="field" style="margin-bottom:14px"><label>Punto de control</label><select id="cSel" data-testid="appcc-control"></select></div>
+          <div class="field" style="margin-bottom:14px"><label>Lectura (ºC)</label><input type="number" id="cVal" step="0.1" value="3.0" data-testid="appcc-value"></div>
+          <div id="limit" class="ai-note" style="margin-bottom:16px"></div>
+          <button class="btn" id="add" data-testid="appcc-add"><span>Registrar control</span><span class="arw">→</span></button>
+        </div>
+        <div class="panel r-app" style="padding:0">
+          <table class="tbl"><thead><tr><th>Hora</th><th>Punto de control</th><th>Límite</th><th>Lectura</th><th>Estado</th><th>Responsable</th></tr></thead>
+          <tbody id="rows"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("appcc");
+  const D=window.NOVA_DATA;
+  const controls=[
+    {name:"Cámara refrigeración",op:"<=",limit:4,unit:"ºC",target:"0–4 ºC"},
+    {name:"Congelador",op:"<=",limit:-18,unit:"ºC",target:"≤ -18 ºC"},
+    {name:"Recepción mercancía",op:"<=",limit:4,unit:"ºC",target:"≤ 4 ºC"},
+    {name:"Aceite freidora",op:"<=",limit:175,unit:"ºC",target:"≤ 175 ºC"},
+    {name:"Regeneración caliente",op:">=",limit:65,unit:"ºC",target:"≥ 65 ºC"}
+  ];
+  let records=NovaApp.store.get("nova_appcc", D.appcc.slice());
+  const cSel=document.getElementById("cSel");
+  cSel.innerHTML=controls.map((c,i)=>`<option value="${i}">${c.name} · ${c.target}</option>`).join("");
+  function evalC(c,v){return c.op==="<="? v<=c.limit : v>=c.limit;}
+  function showLimit(){const c=controls[+cSel.value];document.getElementById("limit").innerHTML=`Límite crítico: <strong>${c.target}</strong>. Nova marcará la lectura como incidencia si lo supera.`;}
+  function render(){
+    const ok=records.filter(r=>r.status==="ok").length;
+    document.getElementById("kReg").textContent=records.length;
+    document.getElementById("kOk").textContent=ok;
+    document.getElementById("kAl").textContent=records.length-ok;
+    document.getElementById("kPc").textContent=Math.round(ok/records.length*100)+"%";
+    document.getElementById("rows").innerHTML=records.map(r=>`<tr><td class="tnum">${r.when}</td><td><b>${r.type}</b></td><td>${r.target||"—"}</td><td class="r tnum">${r.value}</td><td>${r.status==="ok"?'<span class="tag tag--ok"><span class="dot"></span>Conforme</span>':'<span class="tag tag--warn"><span class="dot"></span>Incidencia</span>'}</td><td>${r.who}</td></tr>`).join("");
+  }
+  cSel.addEventListener("change",showLimit);
+  document.getElementById("add").addEventListener("click",()=>{
+    const c=controls[+cSel.value],v=parseFloat(document.getElementById("cVal").value);
+    const ok=evalC(c,v);
+    records.unshift({type:c.name,target:c.target,value:v.toFixed(1)+" "+c.unit,status:ok?"ok":"alert",when:new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}),who:NovaApp.profile().name.split(" ")[0]});
+    NovaApp.store.set("nova_appcc",records);render();
+    NovaApp.toast(ok?"Registro conforme añadido":"¡Incidencia! Lectura fuera de límite");
+  });
+  showLimit();render();
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

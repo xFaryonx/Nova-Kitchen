@@ -1,0 +1,243 @@
+/* ============================================================
+   NOVA — Sistema de diseño base
+   Editorial claro · precisión de cocina profesional
+   ============================================================ */
+@import url("../assets/fonts/fonts.css");
+
+:root{
+  /* Paper / superficies */
+  --paper:#F7F6F2;
+  --paper-2:#EEEBE3;
+  --paper-3:#E7E3D9;
+  --surface:#FFFFFF;
+  --ink:#14130F;
+  --ink-2:#565349;
+  --ink-3:#8C887C;
+  --line:#E2DED4;
+  --line-2:#D3CEC1;
+
+  /* Acentos */
+  --ember:#D8451C;
+  --ember-2:#B7370F;
+  --olive:#4F5A2E;
+  --amber:#C6892A;
+  --sky:#3A6B7A;
+
+  /* Tipografía */
+  --serif:"Fraunces", Georgia, serif;
+  --sans:"Hanken Grotesk", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, monospace;
+
+  --wrap:1440px;
+  --pad:clamp(20px, 5vw, 96px);
+  --ease:cubic-bezier(0.16,1,0.3,1);
+  --ease-2:cubic-bezier(0.7,0,0.2,1);
+
+  --nav-h:76px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-weight:400;
+  font-size:17px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:0;background:none}
+input,textarea,select{font-family:inherit}
+::selection{background:var(--ember);color:#fff}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:var(--paper-2)}
+::-webkit-scrollbar-thumb{background:var(--line-2);border:3px solid var(--paper-2);border-radius:20px}
+::-webkit-scrollbar-thumb:hover{background:var(--ink-3)}
+
+/* ---------- Tipografía ---------- */
+h1,h2,h3,h4{margin:0;font-weight:400;letter-spacing:-0.02em}
+.display{
+  font-family:var(--serif);
+  font-optical-sizing:auto;
+  font-weight:340;
+  line-height:0.94;
+  letter-spacing:-0.028em;
+}
+.h1{font-family:var(--serif);font-weight:340;line-height:0.95;letter-spacing:-0.03em;
+  font-size:clamp(3rem,8.5vw,8rem)}
+.h2{font-family:var(--serif);font-weight:360;line-height:1.02;letter-spacing:-0.025em;
+  font-size:clamp(2.1rem,4.6vw,3.9rem)}
+.h3{font-family:var(--sans);font-weight:600;line-height:1.12;letter-spacing:-0.02em;
+  font-size:clamp(1.35rem,2.4vw,1.9rem)}
+.serif-it{font-family:var(--serif);font-style:italic;font-weight:400}
+.lead{font-size:clamp(1.05rem,1.5vw,1.35rem);line-height:1.55;color:var(--ink-2);font-weight:400}
+
+.overline{
+  font-family:var(--mono);
+  font-size:0.72rem;
+  font-weight:500;
+  text-transform:uppercase;
+  letter-spacing:0.28em;
+  color:var(--ink-3);
+}
+.overline--ember{color:var(--ember)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- Layout ---------- */
+.container{width:100%;max-width:var(--wrap);margin-inline:auto;padding-inline:var(--pad)}
+.section{padding-block:clamp(72px,11vw,168px);position:relative}
+.divider{height:1px;background:var(--line);width:100%}
+
+/* ---------- Botones ---------- */
+.btn{
+  --bg:var(--ink);--fg:#fff;
+  display:inline-flex;align-items:center;gap:.7em;
+  background:var(--bg);color:var(--fg);
+  font-family:var(--mono);font-size:.78rem;font-weight:500;
+  text-transform:uppercase;letter-spacing:.14em;
+  padding:1.05em 1.6em;border-radius:100px;
+  position:relative;overflow:hidden;
+  transition:transform .5s var(--ease), color .4s var(--ease);
+  will-change:transform;
+}
+.btn>*{position:relative;z-index:1}
+.btn::after{content:"";position:absolute;inset:0;background:var(--ember);
+  transform:translateY(101%);transition:transform .5s var(--ease);z-index:0}
+.btn:hover{transform:translateY(-2px)}
+.btn:hover::after{transform:translateY(0)}
+.btn--ember{--bg:var(--ember)}
+.btn--ember::after{background:var(--ink)}
+.btn--ghost{--bg:transparent;--fg:var(--ink);border:1px solid var(--line-2)}
+.btn--ghost::after{background:var(--ink)}
+.btn--ghost:hover{color:#fff}
+.btn--lg{padding:1.25em 2em;font-size:.82rem}
+.btn .arw{display:inline-block;transition:transform .5s var(--ease)}
+.btn:hover .arw{transform:translateX(4px)}
+
+/* ---------- Marquee ---------- */
+.marquee{overflow:hidden;border-block:1px solid var(--line);padding-block:clamp(18px,2.4vw,34px);white-space:nowrap;background:var(--paper)}
+.marquee__track{display:inline-flex;align-items:center;will-change:transform}
+.marquee__item{font-family:var(--serif);font-style:italic;font-weight:340;
+  font-size:clamp(2rem,5vw,4.4rem);letter-spacing:-0.02em;padding-inline:clamp(24px,3vw,56px);color:var(--ink)}
+.marquee__dot{width:.42em;height:.42em;border-radius:50%;background:var(--ember);flex:0 0 auto}
+
+/* ---------- Grano / textura ---------- */
+.grain{position:fixed;inset:0;z-index:9998;pointer-events:none;opacity:.045;mix-blend-mode:multiply}
+
+/* ---------- Cursor ---------- */
+.cursor,.cursor-ring{position:fixed;top:0;left:0;z-index:99999;pointer-events:none;border-radius:50%;
+  transform:translate(-50%,-50%);mix-blend-mode:difference}
+.cursor{width:7px;height:7px;background:#fff}
+.cursor-ring{width:38px;height:38px;border:1px solid rgba(255,255,255,.6);
+  transition:width .35s var(--ease),height .35s var(--ease),background .35s var(--ease),border-color .35s var(--ease)}
+.cursor-ring.is-active{width:64px;height:64px;background:rgba(255,255,255,.12);border-color:transparent}
+body.cursor-on{cursor:none}
+@media (hover:none),(pointer:coarse){.cursor,.cursor-ring{display:none!important}body.cursor-on{cursor:auto}}
+
+/* ---------- Reveal (JS/ScrollTrigger) ---------- */
+.r-up{opacity:0;transform:translateY(28px)}
+.r-fade{opacity:0}
+[data-reveal] .r-line{overflow:hidden;display:block}
+[data-reveal] .r-line>span{display:block;will-change:transform}
+@media (prefers-reduced-motion:reduce){
+  .r-up,.r-fade{opacity:1!important;transform:none!important}
+  [data-reveal] .r-line>span{transform:none!important}
+  *{scroll-behavior:auto!important}
+}
+
+/* ---------- Nav (landing) ---------- */
+.nav{position:fixed;top:0;left:0;right:0;z-index:900;height:var(--nav-h);
+  display:flex;align-items:center;
+  background:rgba(247,246,242,0);backdrop-filter:blur(0);
+  transition:background .5s var(--ease),backdrop-filter .5s var(--ease),border-color .5s var(--ease);
+  border-bottom:1px solid transparent}
+.nav.is-stuck{background:rgba(247,246,242,.72);backdrop-filter:blur(18px);border-bottom-color:var(--line)}
+.nav__in{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:var(--wrap);margin-inline:auto;padding-inline:var(--pad)}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:var(--serif);font-size:1.5rem;letter-spacing:-0.02em}
+.brand__mark{width:26px;height:26px;flex:0 0 auto}
+.nav__links{display:flex;align-items:center;gap:clamp(18px,2.4vw,40px)}
+.nav__link{font-family:var(--mono);font-size:.74rem;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-2);
+  position:relative;transition:color .3s var(--ease)}
+.nav__link::after{content:"";position:absolute;left:0;bottom:-6px;width:100%;height:1px;background:var(--ink);
+  transform:scaleX(0);transform-origin:left;transition:transform .4s var(--ease)}
+.nav__link:hover{color:var(--ink)}
+.nav__link:hover::after{transform:scaleX(1)}
+.nav__cta{display:inline-flex}
+.nav__burger{display:none}
+@media (max-width:880px){
+  .nav__links{position:fixed;inset:0;top:0;flex-direction:column;justify-content:center;gap:26px;
+    background:var(--paper);transform:translateY(-101%);transition:transform .6s var(--ease);height:100vh}
+  .nav__links.open{transform:translateY(0)}
+  .nav__link{font-size:1rem}
+  .nav__burger{display:flex;flex-direction:column;gap:5px;z-index:901;width:30px}
+  .nav__burger span{height:1.5px;background:var(--ink);width:100%;transition:transform .4s var(--ease),opacity .3s}
+  .nav__burger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
+  .nav__burger.open span:nth-child(2){opacity:0}
+  .nav__burger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+}
+
+/* ---------- Footer ---------- */
+.footer{background:var(--ink);color:var(--paper);padding-block:clamp(64px,9vw,120px) 40px}
+.footer a{color:var(--paper)}
+.footer__grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:48px}
+.footer__big{font-family:var(--serif);font-size:clamp(2.4rem,6vw,5rem);line-height:.95;letter-spacing:-0.03em}
+.footer__col h5{font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.2em;color:#8C887C;margin:0 0 20px}
+.footer__col ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.footer__col a{color:#C9C6BE;transition:color .3s var(--ease)}
+.footer__col a:hover{color:#fff}
+.footer__bottom{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;
+  margin-top:clamp(48px,8vw,96px);padding-top:28px;border-top:1px solid rgba(255,255,255,.12);
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;color:#8C887C;text-transform:uppercase}
+@media (max-width:760px){.footer__grid{grid-template-columns:1fr 1fr}.footer__big{grid-column:1/-1;margin-bottom:24px}}
+
+/* utils */
+.eyebrow-row{display:flex;align-items:center;gap:14px}
+.eyebrow-row::before{content:"";width:34px;height:1px;background:var(--ember)}
+.tnum{font-variant-numeric:tabular-nums}
+.hidden{display:none!important}
+
+/* ---------- Calculadora flotante (semitransparente) ---------- */
+.novacalc{position:fixed;right:22px;bottom:22px;z-index:9500;font-family:var(--sans)}
+.novacalc__fab{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:var(--ink);
+  background:rgba(255,255,255,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.6);box-shadow:0 10px 30px rgba(20,19,15,.16);
+  transition:transform .45s var(--ease),background .35s var(--ease),opacity .35s var(--ease)}
+.novacalc__fab svg{width:24px;height:24px}
+.novacalc__fab:hover{transform:translateY(-3px) rotate(-6deg);background:rgba(255,255,255,.8)}
+.novacalc__fab.hidden-fab{opacity:0;pointer-events:none;transform:scale(.6)}
+.novacalc__panel{position:absolute;right:0;bottom:0;width:290px;
+  background:rgba(250,249,246,.72);backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);
+  border:1px solid rgba(255,255,255,.7);border-radius:20px;box-shadow:0 24px 70px rgba(20,19,15,.22);
+  padding:14px;transform:translateY(16px) scale(.94);transform-origin:bottom right;opacity:0;pointer-events:none;
+  transition:transform .5s var(--ease),opacity .4s var(--ease)}
+.novacalc__panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:auto}
+.novacalc__head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:2px 4px}
+.novacalc__title{font-family:var(--mono);font-size:.66rem;text-transform:uppercase;letter-spacing:.18em;color:var(--ink-2)}
+.novacalc__close{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);
+  background:rgba(255,255,255,.5);transition:background .3s,color .3s}
+.novacalc__close svg{width:14px}
+.novacalc__close:hover{background:var(--ink);color:#fff}
+.novacalc__screen{background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.7);border-radius:12px;
+  padding:12px 14px;margin-bottom:12px;text-align:right;min-height:70px;display:flex;flex-direction:column;justify-content:flex-end}
+.novacalc__expr{font-family:var(--mono);font-size:.8rem;color:var(--ink-3);min-height:16px;word-break:break-all}
+.novacalc__out{font-family:var(--serif);font-size:1.9rem;font-weight:400;letter-spacing:-0.02em;line-height:1.1;color:var(--ink);word-break:break-all}
+.novacalc__keys{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.novacalc__key{height:44px;border-radius:11px;font-family:var(--sans);font-size:1.05rem;font-weight:500;color:var(--ink);
+  background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.6);
+  transition:transform .2s var(--ease),background .25s var(--ease),color .25s var(--ease)}
+.novacalc__key:hover{background:#fff}
+.novacalc__key:active{transform:scale(.93)}
+.novacalc__key.is-op{color:var(--ember);font-weight:600}
+.novacalc__key.is-fn{background:rgba(20,19,15,.06);color:var(--ink-2);font-size:.9rem}
+.novacalc__key.is-zero{grid-column:span 2}
+.novacalc__key.is-eq{background:var(--ember);color:#fff;grid-column:span 1}
+.novacalc__key.is-eq:hover{background:var(--ember-2)}
+@media (max-width:560px){.novacalc{right:14px;bottom:14px}.novacalc__panel{width:min(290px,86vw)}}

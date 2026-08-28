@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — El sistema operativo de la cocina profesional</title>
+<meta name="description" content="Nova es el asistente culinario inteligente para cocinas profesionales. Escandallos, stock, producción, cartas, APPCC y alérgenos. Escribe en lenguaje natural, Nova ejecuta." />
+<link rel="preload" href="assets/img/hero_kitchen.jpg" as="image" />
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/landing.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body class="cursor-on">
+
+<!-- Grano -->
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+
+<!-- Cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Loader -->
+<div class="loader" id="loader" data-testid="loader">
+  <div class="loader__word" id="loaderWord"><span>N</span><span>O</span><span>V</span><span>A</span></div>
+  <div class="loader__sub"><span>El sistema operativo de la cocina</span></div>
+  <div class="loader__count" id="loaderCount">00</div>
+  <div class="loader__bar" id="loaderBar"></div>
+</div>
+
+<!-- Nav -->
+<nav class="nav" id="nav">
+  <div class="nav__in">
+    <a href="index.html" class="brand" data-testid="brand-logo" data-cursor>
+      <svg class="brand__mark" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" fill="#14130f"/><path d="M9 23V9l14 14V9" stroke="#D8451C" stroke-width="2.2"/></svg>
+      Nova
+    </a>
+    <div class="nav__links" id="navLinks">
+      <a class="nav__link" href="#manifiesto" data-testid="nav-manifiesto">Filosofía</a>
+      <a class="nav__link" href="#modulos" data-testid="nav-modulos">Módulos</a>
+      <a class="nav__link" href="#asistente" data-testid="nav-asistente">Asistente</a>
+      <a class="nav__link" href="app.html" data-testid="nav-app">La app</a>
+    </div>
+    <a href="app.html" class="btn nav__cta" data-testid="nav-cta" data-cursor><span>Entrar a Nova</span><span class="arw">→</span></a>
+    <button class="nav__burger" id="burger" aria-label="Menú" data-testid="nav-burger"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero" id="top">
+  <div class="hero__media">
+    <img class="hero__img" src="assets/img/hero_kitchen.jpg" alt="Cocina profesional al amanecer" />
+    <img class="hero__steam" src="assets/img/hero_layer.jpg" alt="" aria-hidden="true" id="heroSteam" />
+    <div class="hero__scrim"></div>
+    <canvas class="hero__canvas" id="steamCanvas"></canvas>
+  </div>
+  <div class="hero__loop" data-testid="hero-loop">Loop en directo</div>
+  <div class="hero__in">
+    <div class="hero__eyebrow eyebrow-row"><span class="overline">Asistente culinario · IA</span></div>
+    <h1 class="h1" data-reveal data-testid="hero-title">No es un recetario.<br/>Es tu <em>segundo</em> al mando.</h1>
+    <div class="hero__foot">
+      <p class="lead hero__lead r-up">Nova entiende lo que pides en lenguaje natural y ejecuta el trabajo real de una cocina profesional: escandallos, producción, stock, cartas y control sanitario. Precisión de chef, velocidad de máquina.</p>
+      <div class="hero__actions r-up">
+        <a href="app.html" class="btn btn--lg" data-testid="hero-cta-app" data-cursor><span>Probar el asistente</span><span class="arw">→</span></a>
+        <a href="#asistente" class="btn btn--ghost btn--lg" data-testid="hero-cta-demo" data-cursor><span>Ver demo</span></a>
+      </div>
+    </div>
+  </div>
+  <div class="hero__scroll"><i></i>Desliza</div>
+</header>
+
+<!-- Claim -->
+<section class="section container">
+  <div class="claim" data-reveal>
+    <p><span class="muted">Cada servicio son mil decisiones.</span> Nova toma las repetitivas por ti —calcular, prever, cuadrar— para que tú te quedes con las que <em>de verdad importan</em>: el sabor, el pase, tu equipo.</p>
+  </div>
+</section>
+
+<!-- Marquee -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track" id="marquee">
+    <span class="marquee__item">Escandallos</span><span class="marquee__dot"></span>
+    <span class="marquee__item">Producción</span><span class="marquee__dot"></span>
+    <span class="marquee__item">Stock</span><span class="marquee__dot"></span>
+    <span class="marquee__item">Cartas</span><span class="marquee__dot"></span>
+    <span class="marquee__item">Alérgenos</span><span class="marquee__dot"></span>
+    <span class="marquee__item">APPCC</span><span class="marquee__dot"></span>
+    <span class="marquee__item">Compras</span><span class="marquee__dot"></span>
+  </div>
+</div>
+
+<!-- Manifiesto -->
+<section class="section container" id="manifiesto">
+  <div class="eyebrow-row" style="margin-bottom:8px"><span class="overline overline--ember">La filosofía</span></div>
+  <h2 class="h2" data-reveal style="max-width:20ch">Diseñado para cocinar mejor,<br/>no para jugar a la tecnología.</h2>
+
+  <div class="chapter">
+    <div class="chapter__head">
+      <div class="chapter__idx">01 — Intención</div>
+      <h3 class="chapter__title h3">Le hablas como a tu jefe de partida.</h3>
+    </div>
+    <div class="chapter__body r-up">
+      <p>Nada de formularios ni menús interminables. Escribes <strong>«hazme un escandallo para una lasaña de 40 raciones»</strong> y Nova entiende el plato, el volumen y lo que necesitas antes de que termines la frase.</p>
+      <p>Bajo cada respuesta hay un proceso disciplinado: analiza tu consulta, recupera tus datos y solo entonces responde. Nunca improvisa.</p>
+      <ul class="chapter__list">
+        <li><span>—</span>Lenguaje natural, sin curva de aprendizaje</li>
+        <li><span>—</span>Detección automática de la intención</li>
+        <li><span>—</span>Respuestas accionables, no párrafos</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="chapter">
+    <div class="chapter__head">
+      <div class="chapter__idx">02 — Memoria</div>
+      <h3 class="chapter__title h3">Te recuerda. Servicio tras servicio.</h3>
+    </div>
+    <div class="chapter__body r-up">
+      <p>Tu cocina no empieza de cero cada día y Nova tampoco. Guarda <strong>tus recetas, tus proveedores, tus cartas y tus costes</strong>, y aprende de cada consulta para anticiparse a la siguiente.</p>
+      <p>Memoria temporal para el turno de hoy; memoria permanente para el negocio de siempre. Todo tuyo, todo en contexto.</p>
+      <ul class="chapter__list">
+        <li><span>—</span>Perfil de empresa y tipo de cocina</li>
+        <li><span>—</span>Recetas, cartas e ingredientes frecuentes</li>
+        <li><span>—</span>Historial de producciones y decisiones</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="chapter">
+    <div class="chapter__head">
+      <div class="chapter__idx">03 — Arquitectura</div>
+      <h3 class="chapter__title h3">Módulos que trabajan en equipo.</h3>
+    </div>
+    <div class="chapter__body r-up">
+      <p>Un escandallo alimenta la carta. La carta dispara la producción. La producción vacía el stock. El stock genera la compra. En Nova <strong>todo está conectado</strong>, como en una cocina que funciona.</p>
+      <p>Arquitectura limpia y modular pensada para crecer contigo durante años, no para caducar en una temporada.</p>
+      <ul class="chapter__list">
+        <li><span>—</span>Nueve módulos independientes y conectados</li>
+        <li><span>—</span>Datos que fluyen sin duplicar trabajo</li>
+        <li><span>—</span>Escalable de un bistró a una cadena</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Módulos bento -->
+<section class="section modules" id="modulos">
+  <div class="container">
+    <div class="eyebrow-row" style="margin-bottom:18px"><span class="overline">El sistema · 09 módulos</span></div>
+    <h2 class="h2" data-reveal style="max-width:22ch">Todo lo que gestionas a mano,<br/>orquestado en un solo lugar.</h2>
+    <div class="mgrid" id="mgrid">
+      <a class="mcard mcard--wide" href="escandallos.html" data-cursor data-testid="mod-escandallos"><div class="mcard__glow"></div><span class="mcard__no">01 / Rentabilidad</span><h3>Escandallos</h3><p>Coste por ingrediente, por ración y total. Márgenes y PVP calculados al céntimo, en segundos.</p></a>
+      <a class="mcard mcard--tall" href="recetas.html" data-cursor data-testid="mod-recetas"><div class="mcard__glow"></div><span class="mcard__no">02 / Recetario</span><h3>Recetas</h3><p>Crea, versiona y escala cantidades sin recalcular nada. Fichas técnicas listas para el pase.</p></a>
+      <a class="mcard" href="stock.html" data-cursor data-testid="mod-stock"><div class="mcard__glow"></div><span class="mcard__no">03 / Inventario</span><h3>Stock</h3><p>Consumos, mínimos, caducidades y avisos antes de que falte.</p></a>
+      <a class="mcard" href="produccion.html" data-cursor data-testid="mod-produccion"><div class="mcard__glow"></div><span class="mcard__no">04 / Operativa</span><h3>Producción</h3><p>Organiza el día y planifica la semana con volúmenes reales.</p></a>
+      <a class="mcard" href="carta.html" data-cursor data-testid="mod-carta"><div class="mcard__glow"></div><span class="mcard__no">05 / Sala</span><h3>Carta</h3><p>Diseña cartas por temporada y controla la rentabilidad de cada plato.</p></a>
+      <a class="mcard" href="appcc.html" data-cursor data-testid="mod-appcc"><div class="mcard__glow"></div><span class="mcard__no">06 / Seguridad</span><h3>APPCC</h3><p>Registros, temperaturas y controles trazables sin papeleo.</p></a>
+      <a class="mcard" href="alergenos.html" data-cursor data-testid="mod-alergenos"><div class="mcard__glow"></div><span class="mcard__no">07 / Normativa</span><h3>Alérgenos</h3><p>Detección automática de los 14 alérgenos y etiquetado.</p></a>
+      <a class="mcard" href="proveedores.html" data-cursor data-testid="mod-proveedores"><div class="mcard__glow"></div><span class="mcard__no">08 / Compras</span><h3>Proveedores</h3><p>Compara precios y gestiona pedidos con criterio.</p></a>
+      <a class="mcard" href="compras.html" data-cursor data-testid="mod-compras"><div class="mcard__glow"></div><span class="mcard__no">09 / Compras</span><h3>Compras</h3><p>Listas automáticas de reposición al mejor precio.</p></a>
+    </div>
+  </div>
+</section>
+
+<!-- Demo IA -->
+<section class="section demo" id="asistente">
+  <div class="container">
+    <div class="eyebrow-row" style="margin-bottom:18px"><span class="overline overline--ember">El asistente · en directo</span></div>
+    <div class="demo__wrap">
+      <div>
+        <h2 class="h2" data-reveal style="max-width:14ch">Pídeselo.<br/>Nova lo resuelve.</h2>
+        <p class="lead r-up" style="margin-top:22px;max-width:40ch">Escribe una orden real de cocina o toca una sugerencia. Verás el proceso interno de Nova y una respuesta lista para usar.</p>
+        <div class="demo__chips" id="demoChips">
+          <button class="chip" data-cursor data-q="Hazme un escandallo para una lasaña de 40 raciones" data-testid="chip-1">Escandallo lasaña · 40 rac.</button>
+          <button class="chip" data-cursor data-q="¿Qué puedo cocinar con este stock?" data-testid="chip-2">¿Qué cocino con mi stock?</button>
+          <button class="chip" data-cursor data-q="Diseña una carta de otoño" data-testid="chip-3">Carta de otoño</button>
+          <button class="chip" data-cursor data-q="Organiza la producción del viernes" data-testid="chip-4">Producción del viernes</button>
+          <button class="chip" data-cursor data-q="Calcula el precio de venta del risotto con un 30% de margen" data-testid="chip-5">PVP risotto · 30%</button>
+          <button class="chip" data-cursor data-q="Detecta los alérgenos de las croquetas" data-testid="chip-6">Alérgenos croquetas</button>
+        </div>
+      </div>
+      <div class="console" data-testid="demo-console">
+        <div class="console__bar"><span class="console__dot"></span><span class="console__dot"></span><span class="console__dot"></span><span class="console__title">nova · asistente</span></div>
+        <form class="console__form" id="demoForm">
+          <span class="prompt">›</span>
+          <input class="console__input" id="demoInput" type="text" autocomplete="off" placeholder="Escribe una orden para tu cocina…" value="Hazme un escandallo para una lasaña de 40 raciones" data-testid="demo-input" />
+          <button class="console__send" type="submit" aria-label="Enviar" data-testid="demo-send"><svg width="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2"/></svg></button>
+        </form>
+        <div class="console__body" id="demoBody"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Producto 1 -->
+<section class="section container">
+  <div class="split">
+    <div class="split__media" data-parallax><img src="assets/img/scale_weighing.jpg" alt="Báscula de precisión en cocina" /><div class="split__spot"></div><span class="split__cap">Precisión · gramo a gramo</span></div>
+    <div class="split__body">
+      <span class="overline overline--ember">Escandallos</span>
+      <h2 class="h2" data-reveal>El margen no se estima.<br/>Se calcula.</h2>
+      <p class="r-up">Cada receta se convierte en un escandallo vivo: coste por ingrediente, por ración y total, actualizado con los precios reales de tus proveedores. Cambia un volumen y todo se recalcula solo.</p>
+      <p class="r-up">Fija el food cost objetivo y Nova te devuelve el PVP exacto para proteger tu rentabilidad plato a plato.</p>
+      <a href="escandallos.html" class="btn btn--ghost r-up" data-cursor data-testid="split-cta-escandallos"><span>Abrir escandallos</span><span class="arw">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="stats">
+  <div class="stat"><div class="stat__n" data-count="9"><em>09</em></div><div class="stat__l">Módulos conectados que cubren la operativa completa</div></div>
+  <div class="stat"><div class="stat__n" data-count="14">14</div><div class="stat__l">Alérgenos de declaración obligatoria detectados solos</div></div>
+  <div class="stat"><div class="stat__n"><em>0</em></div><div class="stat__l">Hojas de cálculo que vuelves a tocar a mano</div></div>
+  <div class="stat"><div class="stat__n">24<span style="font-size:.4em">/7</span></div><div class="stat__l">Un segundo al mando que no libra ni en fin de semana</div></div>
+</section>
+
+<!-- Producto 2 -->
+<section class="section container">
+  <div class="split split--rev">
+    <div class="split__media" data-parallax><img src="assets/img/pantry_shelves.jpg" alt="Despensa organizada" /><div class="split__spot"></div><span class="split__cap">Stock · siempre bajo control</span></div>
+    <div class="split__body">
+      <span class="overline overline--ember">Stock & Compras</span>
+      <h2 class="h2" data-reveal>Nunca más un<br/>«se nos ha acabado».</h2>
+      <p class="r-up">Nova conoce tu inventario, cruza consumos con tus producciones y te avisa de mínimos y caducidades antes de que sean un problema en pleno servicio.</p>
+      <p class="r-up">Con un clic genera la lista de compra —solo lo que falta— y elige el proveedor más barato de cada referencia.</p>
+      <a href="stock.html" class="btn btn--ghost r-up" data-cursor data-testid="split-cta-stock"><span>Ver inventario</span><span class="arw">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- Cita -->
+<section class="section container">
+  <div class="quote" data-reveal>
+    <blockquote>«Contraté a Nova para dejar de cocinar con la calculadora en una mano. <span>Ahora el papeleo se hace solo y yo vuelvo a estar en los fogones.»</span></blockquote>
+    <div class="quote__by"><img src="assets/img/chef_portrait.jpg" alt="Chef" /><div>Chef ejecutiva · Grupo gastronómico de 4 locales</div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section cta">
+  <div class="container">
+    <span class="overline">Empieza hoy</span>
+    <div class="cta__row" style="margin-top:22px">
+      <h2 class="h2" data-reveal>Tu cocina, más rentable<br/>desde el primer servicio.</h2>
+      <div>
+        <p class="r-up">Entra al asistente y pon a prueba a Nova con una orden real. Sin instalar nada, sin curva de aprendizaje.</p>
+        <a href="app.html" class="btn btn--lg r-up" style="margin-top:24px" data-cursor data-testid="cta-final"><span>Entrar a Nova</span><span class="arw">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__big">Nova</div>
+      <div class="footer__col"><h5>Módulos</h5><ul>
+        <li><a href="recetas.html" data-cursor>Recetas</a></li>
+        <li><a href="escandallos.html" data-cursor>Escandallos</a></li>
+        <li><a href="stock.html" data-cursor>Stock</a></li>
+        <li><a href="produccion.html" data-cursor>Producción</a></li>
+        <li><a href="carta.html" data-cursor>Carta</a></li>
+      </ul></div>
+      <div class="footer__col"><h5>Más</h5><ul>
+        <li><a href="appcc.html" data-cursor>APPCC</a></li>
+        <li><a href="alergenos.html" data-cursor>Alérgenos</a></li>
+        <li><a href="proveedores.html" data-cursor>Proveedores</a></li>
+        <li><a href="compras.html" data-cursor>Compras</a></li>
+        <li><a href="app.html" data-cursor>Asistente</a></li>
+      </ul></div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 Nova · Sistema operativo de cocina</span>
+      <span>Hecho para profesionales que buscan precisión</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/lib/ScrollTrigger.min.js"></script>
+<script src="js/lib/lenis.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/nova-ai.js"></script>
+<script src="js/console.js"></script>
+<script src="js/landing.js"></script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

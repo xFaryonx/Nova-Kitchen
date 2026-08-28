@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Alérgenos</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Alérgenos</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Normativa · 07</span>
+        <h1>Los 14 alérgenos, detectados solos</h1>
+        <p>Nova cruza los ingredientes de cada receta con los 14 alérgenos de declaración obligatoria (Reglamento UE 1169/2011) y genera el etiquetado.</p>
+      </div>
+      <div class="ctrl-row r-app"><div class="field" style="min-width:260px"><label>Receta</label><select id="rSel" data-testid="al-recipe"></select></div></div>
+      <div class="two-col">
+        <div class="panel r-app">
+          <div class="panel__title" id="alTitle">Detección</div>
+          <div class="al-full" id="grid"></div>
+        </div>
+        <div class="panel r-app">
+          <div class="panel__title">Etiquetado sugerido</div>
+          <div id="report"></div>
+        </div>
+      </div>
+      <div class="panel r-app" style="margin-top:20px;padding:0">
+        <div class="panel__title" style="padding:22px 24px 0">Matriz de la carta</div>
+        <div style="overflow-x:auto"><table class="tbl" id="matrix"></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("alergenos");
+  const D=window.NOVA_DATA;
+  const AL=Object.keys(D.allergenLabels);
+  const rSel=document.getElementById("rSel");
+  rSel.innerHTML=D.recipes.map(r=>`<option value="${r.id}">${r.name}</option>`).join("");
+  function render(){
+    const id=rSel.value,r=D.recipeMap[id],al=D.recipeAllergens(id);
+    document.getElementById("alTitle").innerHTML=`${r.name} <span class="tag ${al.length?'tag--warn':'tag--ok'}">${al.length} detectados</span>`;
+    document.getElementById("grid").innerHTML=AL.map(a=>`<div class="al-cell ${al.includes(a)?'is-on':''}"><span>${D.allergenLabels[a]}</span></div>`).join("");
+    const ings=al.map(a=>{const list=r.items.filter(it=>D.ingMap[it.ing].allergens.includes(a)).map(it=>D.ingMap[it.ing].name);return `<div class="memitem"><em>${D.allergenLabels[a]}</em> — presente en: ${list.join(", ")}</div>`;}).join("");
+    document.getElementById("report").innerHTML= al.length? `<p style="margin:0 0 14px;color:var(--ink-2)">Este plato <strong>contiene ${al.length} alérgeno(s)</strong> de declaración obligatoria. Debe figurar en carta.</p>${ings}<div class="al-row" style="margin-top:16px">${al.map(a=>`<span class="al-badge">${D.allergenLabels[a]}</span>`).join("")}</div>`
+      : `<p style="color:var(--olive)"><strong>Sin alérgenos de declaración obligatoria detectados.</strong> Verifica siempre trazas según tu proveedor.</p>`;
+  }
+  rSel.addEventListener("change",render);
+  // matriz
+  const short={gluten:"Glu",crustaceos:"Cru",huevo:"Hue",pescado:"Pes",cacahuetes:"Cac",soja:"Soj",lactosa:"Lác",frutos_cascara:"Fru",apio:"Api",mostaza:"Mos",sesamo:"Sés",sulfitos:"Sul",altramuces:"Alt",moluscos:"Mol"};
+  document.getElementById("matrix").innerHTML=`<thead><tr><th>Plato</th>${AL.map(a=>`<th title="${D.allergenLabels[a]}">${short[a]}</th>`).join("")}</tr></thead><tbody>${D.recipes.map(r=>{const al=D.recipeAllergens(r.id);return `<tr><td><b>${r.name}</b></td>${AL.map(a=>`<td class="r">${al.includes(a)?'<span class="dot" style="display:inline-block;background:var(--ember)"></span>':'<span style="color:var(--line-2)">·</span>'}</td>`).join("")}</tr>`;}).join("")}</tbody>`;
+  render();
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

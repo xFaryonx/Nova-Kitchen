@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Producción</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Producción</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Operativa · 04</span>
+        <h1>La semana, orquestada</h1>
+        <p>Planifica volúmenes reales por día. Nova calcula el coste de materia prima de cada elaboración y el total de la semana.</p>
+      </div>
+      <div class="kpis r-app">
+        <div class="kpi"><span class="overline">Elaboraciones</span><strong id="kEl">—</strong></div>
+        <div class="kpi"><span class="overline">Raciones / semana</span><strong id="kRac">—</strong></div>
+        <div class="kpi"><span class="overline">Coste materia · semana</span><strong id="kCost">—</strong></div>
+        <div class="kpi"><span class="overline">Día más intenso</span><strong id="kPeak">—</strong></div>
+      </div>
+      <div class="board r-app" id="board"></div>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("produccion");
+  const D=window.NOVA_DATA,eur=NovaApp.eur;
+  let totalCost=0,totalRac=0,totalEl=0,peak={day:"—",n:0};
+  document.getElementById("board").innerHTML=D.production.map(day=>{
+    let dc=0,dr=0;
+    const cards=day.tasks.map(t=>{const r=D.recipeMap[t.recipe];const c=D.recipeCost(r.id,t.portions);dc+=c.total;dr+=t.portions;totalEl++;return `<div class="pcard"><b>${r.name}</b><span>${t.portions} rac · ${eur(c.total)} · ${r.minutes}'</span></div>`;}).join("")||'<div class="pcard" style="border-color:var(--line-2);color:var(--ink-3)"><b>Descanso</b><span>Sin producción</span></div>';
+    totalCost+=dc;totalRac+=dr; if(dr>peak.n)peak={day:day.day,n:dr};
+    return `<div class="col"><div class="col__h">${day.day}<br><span class="mono" style="color:var(--ink-3);font-size:.9em">${eur(dc)}</span></div><div class="col__b">${cards}</div></div>`;
+  }).join("");
+  document.getElementById("kEl").textContent=totalEl;
+  document.getElementById("kRac").textContent=totalRac;
+  document.getElementById("kCost").textContent=eur(totalCost);
+  document.getElementById("kPeak").textContent=peak.day;
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Stock</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Stock</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Inventario · 03</span>
+        <h1>Tu despensa, en tiempo real</h1>
+        <p>Nova cruza tu inventario con mínimos y caducidades para avisarte antes de que falte nada. Filtra por lo que necesita tu atención.</p>
+      </div>
+      <div class="kpis r-app">
+        <div class="kpi"><span class="overline">Referencias</span><strong id="kRef">—</strong></div>
+        <div class="kpi"><span class="overline">Bajo mínimos</span><strong id="kLow">—</strong><small class="warn">reponer</small></div>
+        <div class="kpi"><span class="overline">Caducan ≤ 4 días</span><strong id="kExp">—</strong><small class="warn">prioridad</small></div>
+        <div class="kpi"><span class="overline">Valor inventario</span><strong id="kVal">—</strong></div>
+      </div>
+      <div class="r-app" style="margin-bottom:20px"><div class="seg" id="filter">
+        <button class="active" data-f="all" data-testid="filter-all">Todos</button>
+        <button data-f="low" data-testid="filter-low">Bajo mínimos</button>
+        <button data-f="exp" data-testid="filter-exp">Caducidad</button>
+      </div></div>
+      <div class="panel r-app" style="padding:0">
+        <table class="tbl"><thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mínimo</th><th>Estado</th><th>Caducidad</th><th>Valor</th></tr></thead>
+        <tbody id="rows"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("stock");
+  const D=window.NOVA_DATA,eur=NovaApp.eur,num=NovaApp.num,TODAY=new Date("2026-06-11");
+  const days=s=>Math.round((new Date(s)-TODAY)/86400000);
+  const low=D.stock.filter(s=>s.qty<s.min), exp=D.stock.filter(s=>days(s.exp)<=4);
+  document.getElementById("kRef").textContent=D.stock.length;
+  document.getElementById("kLow").textContent=low.length;
+  document.getElementById("kExp").textContent=exp.length;
+  document.getElementById("kVal").textContent=eur(D.stock.reduce((a,s)=>a+s.qty*D.ingMap[s.ing].price,0));
+  let f="all";
+  function render(){
+    let list=D.stock.slice();
+    if(f==="low")list=low; if(f==="exp")list=exp.slice().sort((a,b)=>days(a.exp)-days(b.exp));
+    document.getElementById("rows").innerHTML=list.map(s=>{
+      const ing=D.ingMap[s.ing],d=days(s.exp),isLow=s.qty<s.min;
+      const st=isLow?'<span class="tag tag--warn"><span class="dot"></span>Bajo mínimos</span>':'<span class="tag tag--ok"><span class="dot"></span>Correcto</span>';
+      const ex=d<=4?`<span class="tag tag--warn">${d}d · ${new Date(s.exp).toLocaleDateString("es-ES")}</span>`:`<span class="tnum">${new Date(s.exp).toLocaleDateString("es-ES")}</span>`;
+      return `<tr><td><b>${ing.name}</b></td><td>${ing.cat}</td><td class="r tnum">${num(s.qty,1)} ${ing.unit}</td><td class="r tnum">${s.min} ${ing.unit}</td><td>${st}</td><td class="r">${ex}</td><td class="r tnum">${eur(s.qty*ing.price)}</td></tr>`;
+    }).join("");
+  }
+  document.getElementById("filter").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;f=b.dataset.f;document.querySelectorAll("#filter button").forEach(x=>x.classList.toggle("active",x===b));render();});
+  render();
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>

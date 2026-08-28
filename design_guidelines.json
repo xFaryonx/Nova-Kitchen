@@ -1,0 +1,166 @@
+{
+  "theme": "light_editorial",
+  "persona": "E1: The Anti-AI Designer",
+  "project_context": {
+    "name": "Nova",
+    "type": "hybrid_fullstack (static site + app dashboard)",
+    "description": "AI-powered culinary assistant and management OS for professional kitchens.",
+    "aesthetic": "Swiss & High-Contrast mixed with Organic. Editorial cookbook meets command center. Minimalist, clean, precision.",
+    "tech_stack": "Vanilla HTML/CSS/JS, Tailwind CSS (via CDN or CLI), GSAP, Lenis (No React, pure static build)"
+  },
+  "colors": {
+    "background": {
+      "primary": "#F9F9F8",
+      "secondary": "#F0F0ED",
+      "surface": "#FFFFFF",
+      "inverse": "#0D0D0D"
+    },
+    "text": {
+      "primary": "#0D0D0D",
+      "secondary": "#595959",
+      "tertiary": "#8C8C8C",
+      "inverse": "#F9F9F8"
+    },
+    "accent": {
+      "primary": "#E04B22",
+      "hover": "#C83E1A",
+      "success": "#4A5D23",
+      "warning": "#E8A317"
+    },
+    "border": {
+      "subtle": "#E5E5E5",
+      "strong": "#0D0D0D"
+    },
+    "rules": [
+      "Use #F9F9F8 instead of pure white for backgrounds to reduce eye strain and give a premium editorial paper feel.",
+      "Surfaces (cards/bento boxes) are pure #FFFFFF for crisp contrast against the off-white background.",
+      "Accent color #E04B22 (Chef's Orange) must be used sparingly for high-priority actions and active states only.",
+      "Never use pure transparent backgrounds for headers over images. Use backdrop-blur with a slight white tint (#FFFFFF/70)."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "headings": "'Cabinet Grotesk', sans-serif",
+      "editorial": "'Cormorant Garamond', serif",
+      "body": "'IBM Plex Sans', sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "hierarchy": {
+      "hero_title": "text-6xl sm:text-7xl lg:text-[7rem] tracking-tighter leading-none font-medium",
+      "h2": "text-4xl sm:text-5xl tracking-tight leading-tight",
+      "h3": "text-2xl sm:text-3xl tracking-tight",
+      "body_large": "text-lg leading-relaxed",
+      "body_base": "text-base leading-relaxed",
+      "caption": "text-sm uppercase tracking-[0.2em] font-mono text-secondary"
+    },
+    "rules": [
+      "Headings use Cabinet Grotesk for a kinetic, authoritative feel. Tightly tracked.",
+      "Use Cormorant Garamond for manifesto chapters, large quotes, or editorial moments (especially italicized).",
+      "IBM Plex Sans for all dashboard UI, recipes, and data grids.",
+      "Labels, metrics, and overlines must be JetBrains Mono, uppercase, and widely spaced.",
+      "Do NOT use Inter, Roboto, or generic default sans fonts."
+    ]
+  },
+  "spacing_and_layout": {
+    "philosophy": "Generous Spacing & The Swiss Grid",
+    "rules": [
+      "Use 2-3x more padding than standard. Sections should breathe.",
+      "Mobile-first responsive. Images never exceed 80vh on mobile.",
+      "Dashboard uses a strict, dense Bento Grid mode with 1px borders and no border-radius (sharp corners).",
+      "Marketing landing page uses highly asymmetric layouts with overlapping images.",
+      "Optical alignment is critical. Align text to the visual weight, not just the bounding box."
+    ],
+    "bento_grid": "grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4 lg:gap-6",
+    "dashboard_surface": "bg-white border border-border/40 shadow-sm rounded-none md:rounded-sm"
+  },
+  "visual_enhancers": {
+    "surfaces": [
+      "Use 'Optical Clarity' Glassmorphism for sticky navs: bg-white/70 backdrop-blur-xl border-b border-black/5.",
+      "Use Neumorphism subtly on dashboard widgets: pure white bg, 1px border, very soft shadow.",
+      "Clipped Frames: Images should often be placed in non-standard aspect ratios (e.g., tall and narrow 3:4 or ultra-wide 16:5) with sharp corners."
+    ],
+    "shadows": {
+      "ambient": "shadow-[0_8px_32px_rgba(13,13,13,0.04)]",
+      "direct": "shadow-[0_2px_8px_rgba(13,13,13,0.08)]"
+    }
+  },
+  "motion": {
+    "libraries": [
+      "GSAP",
+      "Lenis",
+      "ScrollTrigger"
+    ],
+    "principles": [
+      "Smooth Scrolling: Lenis is MANDATORY for the entire site to give it a premium, heavy feel.",
+      "Masked Line-by-Line Reveal: Use GSAP to animate hero text line by line (clip-path or overflow hidden wrappers).",
+      "Parallax/3D: Subtle y-axis movement on hero images and large product photography.",
+      "Marquee: Slow, continuous horizontal scroll for the manifesto or ingredient lists.",
+      "Hover States: Fast response, slow decay. e.g., transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)."
+    ]
+  },
+  "components": {
+    "hero": "Kinetic typography, split layout with clipped product photography, subtle GSAP parallax, and masked text reveal loader with signature.",
+    "marquee": "Editorial ribbon, font-serif (Cormorant Garamond), huge text, extremely slow speed, bordered top and bottom.",
+    "manifesto_chapters": "Numbered sections (01, 02) in mono font, followed by massive serif text layout out asymmetrically.",
+    "dashboard_sidebar": "Minimalist, icon + text, high contrast active states, thin 1px right border.",
+    "chat_interface": "Command-line precision meets chat. Clear distinction between user query (natural language) and AI structured output (cards/tables)."
+  },
+  "media": {
+    "image_urls": {
+      "hero_plating": {
+        "url": "https://images.unsplash.com/photo-1663530761401-15eefb544889?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwZmluZSUyMGRpbmluZyUyMHBsYXRpbmclMjBzcG90bGlnaHR8ZW58MHx8fHwxNzg3OTE5NzI2fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Chef pouring sauce over plated steak in spotlight"
+      },
+      "salmon_plating": {
+        "url": "https://images.unsplash.com/photo-1676471926534-d5c9771909fa?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwZmluZSUyMGRpbmluZyUyMHBsYXRpbmclMjBzcG90bGlnaHR8ZW58MHx8fHwxNzg3OTE5NzI2fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Minimalist white plate topped with fish and vegetables"
+      },
+      "chef_focus": {
+        "url": "https://images.unsplash.com/photo-1717393960163-76ae080ebf17?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBjaGVmJTIwZm9jdXMlMjBraXRjaGVufGVufDB8fHx8MTc4NzkxOTcyNnww&ixlib=rb-4.1.0&q=85",
+        "description": "Professional chef in intense focus preparing food"
+      },
+      "ingredients": {
+        "url": "https://images.unsplash.com/photo-1518843875459-f738682238a6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwzfHxmcmVzaCUyMGluZ3JlZGllbnRzJTIwY29udHJhc3R8ZW58MHx8fHwxNzg3OTE5NzI2fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Assorted fresh vegetables with high contrast dark background"
+      }
+    },
+    "rules": [
+      "Use real product photography, deliberately treated (spotlights, high contrast).",
+      "Clip frames: DO NOT round all corners. Use sharp edges or selective rounding to create a curated, editorial layout."
+    ]
+  },
+  "accessibility": [
+    "Ensure minimum 4.5:1 contrast ratio for all text.",
+    "Include data-testid on all interactive elements (e.g., data-testid='chat-submit-btn').",
+    "Respect prefers-reduced-motion for the GSAP animations."
+  ],
+  "instructions_to_main_agent": [
+    "You are building a STATIC HTML/CSS/JS site. DO NOT use React, Vue, or JSX.",
+    "Use Tailwind CSS via CDN or compiled CSS. Include GSAP and Lenis via CDN inside the HTML.",
+    "The UI has two main parts: The Marketing Landing Page and the App Dashboard. They can be built on a single HTML file using sections, or separate views.",
+    "Implement the 'masked line-by-line reveal' loading moment with a signature using GSAP.",
+    "Use Cabinet Grotesk, Cormorant Garamond, and IBM Plex Sans from Google Fonts/Fontshare.",
+    "Build the dashboard using CSS Grid (Bento style). No generic Bootstrap layouts.",
+    "In the App Dashboard, create a natural language input field (the 'AI OS' interface) that dominates the screen, rather than hiding it in a small corner."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy",
+    "Use glass-morphism effects with backdrop filters (12-24px blur)",
+    "You MUST NOT apply universal transition. Eg: `transition: all`. This results in breaking transforms.",
+    "You MUST NOT center align the app container, ie do not add `.App { text-align: center; }` in the css file.",
+    "Always use modern button styles like pill-shaped, or sharp button with interaction animations & color relevant to the app style",
+    "NEVER: use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 etc for icons.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Subtle grain textures, noise overlays, custom cursors, selection states, and loading animations: separates good from extraordinary.",
+    "Main agent relies on the provided image URLs. Missing categories = main agent will use placeholder text which is FORBIDDEN"
+  ],
+  "general_ui_ux_guidelines": [
+    "Avoid generic centered layouts and simplistic gradients.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "All interactive and key informational elements MUST include a `data-testid` attribute to facilitate robust automated testing."
+  ]
+}

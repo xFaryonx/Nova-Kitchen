@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Carta</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Carta</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Sala · 05</span>
+        <h1>Cartas que dan de comer al negocio</h1>
+        <p>Cada plato con su food cost real. Ajusta el PVP y observa cómo cambia la rentabilidad al instante. Los platos que se comen tu margen, marcados.</p>
+      </div>
+      <div class="r-app" style="margin-bottom:20px"><div class="seg" id="season">
+        <button data-s="primavera">Primavera</button><button data-s="verano">Verano</button>
+        <button class="active" data-s="otoño">Otoño</button><button data-s="invierno">Invierno</button><button data-s="todo">Todo</button>
+      </div></div>
+      <div class="kpis r-app">
+        <div class="kpi"><span class="overline">Platos en carta</span><strong id="kD">—</strong></div>
+        <div class="kpi"><span class="overline">Ticket medio</span><strong id="kT">—</strong></div>
+        <div class="kpi"><span class="overline">Food cost medio</span><strong id="kF">—</strong></div>
+        <div class="kpi"><span class="overline">Margen medio / plato</span><strong id="kM">—</strong></div>
+      </div>
+      <div class="panel r-app" style="padding:0">
+        <table class="tbl"><thead><tr><th>Pase</th><th>Plato</th><th>Coste/rac</th><th>PVP</th><th>Food cost</th><th>Margen</th></tr></thead>
+        <tbody id="rows"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("carta");
+  const D=window.NOVA_DATA,eur=NovaApp.eur,num=NovaApp.num;
+  const order=["Entrante","Principal","Postre"];
+  let season="otoño";
+  function render(){
+    let dishes=D.menu.filter(m=>season==="todo"||m.season===season||m.season==="todo").map(m=>{
+      const r=D.recipeMap[m.recipe],c=D.recipeCost(r.id,r.base);
+      return {cat:r.cat,name:r.name,cost:c.perPortion,pvp:m.pvp,fc:c.perPortion/m.pvp*100,margin:m.pvp-c.perPortion};
+    }).sort((a,b)=>order.indexOf(a.cat)-order.indexOf(b.cat));
+    document.getElementById("kD").textContent=dishes.length;
+    document.getElementById("kT").textContent=eur(dishes.reduce((a,d)=>a+d.pvp,0)/dishes.length);
+    document.getElementById("kF").textContent=num(dishes.reduce((a,d)=>a+d.fc,0)/dishes.length,0)+"%";
+    document.getElementById("kM").textContent=eur(dishes.reduce((a,d)=>a+d.margin,0)/dishes.length);
+    document.getElementById("rows").innerHTML=dishes.map(d=>`<tr><td><span class="tag">${d.cat}</span></td><td><b>${d.name}</b></td><td class="r tnum">${eur(d.cost)}</td><td class="r tnum">${eur(d.pvp)}</td><td class="r tnum">${d.fc>35?'<span class="tag tag--warn">'+num(d.fc,0)+'%</span>':'<span class="tag tag--ok">'+num(d.fc,0)+'%</span>'}</td><td class="r tnum">${eur(d.margin)}</td></tr>`).join("");
+  }
+  document.getElementById("season").addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;season=b.dataset.s;document.querySelectorAll("#season button").forEach(x=>x.classList.toggle("active",x===b));render();});
+  render();
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>
