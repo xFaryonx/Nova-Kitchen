@@ -35,21 +35,35 @@
 </div>
 <script src="js/lib/gsap.min.js"></script>
 <script src="js/data.js"></script>
-<script src="js/custom.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script src="js/custom.js"></script><script src="js/overrides.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
 <script>
 (function(){
   NovaApp.init("proveedores");
   const D=window.NOVA_DATA,eur=NovaApp.eur;
   document.getElementById("cards").innerHTML=D.suppliers.map(s=>`<div class="kpi"><span class="overline">${s.tag}</span><strong style="font-size:1.4rem">${s.name}</strong><small>${Object.keys(s.prices).length} refs · entrega ${s.lead}d · mín ${eur(s.min)}</small></div>`).join("");
   const items=["tomate","cebolla","salmon","gamba","ternera","cerdo","parmesano","nata","harina","aceite","arroz"];
-  const rows=items.map(id=>{
-    const prices=D.suppliers.map(s=>s.prices[id]);
-    const valid=prices.filter(p=>p!=null); if(!valid.length)return"";
-    const min=Math.min(...valid);
-    const tds=D.suppliers.map(s=>{const p=s.prices[id];return `<td class="r tnum ${p===min?'cell-best':''}">${p!=null?eur(p):'·'}</td>`;}).join("");
-    return `<tr><td><b>${D.ingMap[id].name}</b></td>${tds}</tr>`;
-  }).join("");
-  document.getElementById("matrix").innerHTML=`<thead><tr><th>Producto</th>${D.suppliers.map(s=>`<th class="r">${s.name.split(" ")[0]}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`;
+  const matrix=document.getElementById("matrix");
+  function render(){
+    const rows=items.map(id=>{
+      const prices=D.suppliers.map(s=>s.prices[id]);
+      const valid=prices.filter(p=>p!=null); const min=valid.length?Math.min(...valid):null;
+      const tds=D.suppliers.map(s=>{const p=s.prices[id];return `<td class="r tnum editable ${p===min&&p!=null?'cell-best':''}" data-sup="${s.id}" data-ing="${id}" title="Editar precio">${p!=null?eur(p):'+ añadir'}</td>`;}).join("");
+      return `<tr><td><b>${D.ingMap[id].name}</b></td>${tds}</tr>`;
+    }).join("");
+    matrix.innerHTML=`<thead><tr><th>Producto</th>${D.suppliers.map(s=>`<th class="r">${s.name.split(" ")[0]}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`;
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
+  matrix.addEventListener("click",e=>{
+    const cell=e.target.closest(".editable"); if(!cell) return;
+    const sup=cell.dataset.sup, ing=cell.dataset.ing;
+    const p=D.suppliers.find(s=>s.id===sup).prices[ing];
+    NovaApp.inlineEdit(cell,{value:(p!=null?p:D.ingMap[ing].price).toFixed(2),step:"0.01",min:0,onCommit:v=>{
+      const n=parseFloat(v); if(!isNaN(n)&&n>=0){ NovaApp.setSupplierPrice(sup,ing,n); }
+      render();
+      NovaApp.toast("Precio de proveedor actualizado");
+    }});
+  });
+  render();
 })();
 </script>
 <script src="js/calculator.js"></script>

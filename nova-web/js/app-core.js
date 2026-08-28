@@ -206,6 +206,44 @@ window.NovaApp = (function () {
     window.NOVA_DATA.registerRecipe(o);
   }
 
+  /* ---- Ediciones persistentes ---- */
+  const D=()=>window.NOVA_DATA;
+  function setPrice(ingId, price){
+    if(D().ingMap[ingId]) D().ingMap[ingId].price=price;
+    const po=store.get("nova_price_overrides",{}); po[ingId]=price; store.set("nova_price_overrides",po);
+  }
+  function setSupplierPrice(supId, ingId, price){
+    const sup=D().suppliers.find(s=>s.id===supId); if(sup) sup.prices[ingId]=price;
+    const so=store.get("nova_supplier_overrides",{}); so[supId]=so[supId]||{}; so[supId][ingId]=price; store.set("nova_supplier_overrides",so);
+  }
+  function setMenuPvp(recipeId, pvp){
+    const m=D().menu.find(x=>x.recipe===recipeId); if(m) m.pvp=pvp;
+    const mp=store.get("nova_menu_pvp",{}); mp[recipeId]=pvp; store.set("nova_menu_pvp",mp);
+  }
+  function saveStock(){ store.set("nova_stock", D().stock); }
+  function saveProduction(){ store.set("nova_production", D().production); }
+
+  /* ---- Edición inline de celdas ---- */
+  function inlineEdit(el, opts){
+    if(el._editing) return; el._editing=true;
+    const old=el.innerHTML;
+    const inp=document.createElement("input");
+    inp.type=opts.type||"number";
+    if(opts.step) inp.step=opts.step;
+    if(opts.min!=null) inp.min=opts.min;
+    inp.value=opts.value; inp.className="cell-input";
+    el.innerHTML=""; el.appendChild(inp); inp.focus();
+    if(inp.select) try{inp.select();}catch(e){}
+    let done=false;
+    function commit(save){
+      if(done) return; done=true; el._editing=false;
+      if(save && inp.value!=="" ) opts.onCommit(inp.value);
+      else if(!save) el.innerHTML=old;
+    }
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"){e.preventDefault();commit(true);} else if(e.key==="Escape"){e.preventDefault();commit(false);} });
+    inp.addEventListener("blur",()=>commit(true));
+  }
+
   function init(active){
     buildShell(active);
     initCursor();
@@ -215,5 +253,5 @@ window.NovaApp = (function () {
     return true;
   }
 
-  return { init, profile, log, pushLog, toast, eur, num, store, logout, saveIngredient, saveRecipe, isAuthed, isOnboarded, _bindCursor:null };
+  return { init, profile, log, pushLog, toast, eur, num, store, logout, saveIngredient, saveRecipe, isAuthed, isOnboarded, setPrice, setSupplierPrice, setMenuPvp, saveStock, saveProduction, inlineEdit, _bindCursor:null };
 })();

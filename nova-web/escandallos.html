@@ -50,7 +50,7 @@
 </div>
 <script src="js/lib/gsap.min.js"></script>
 <script src="js/data.js"></script>
-<script src="js/custom.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script src="js/custom.js"></script><script src="js/overrides.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
 <script>
 (function(){
   NovaApp.init("escandallos");
@@ -70,8 +70,10 @@
   const active=new Set();      // grupos activos
   let curRecipe=null;
 
+  let curTotal=0;
   function render(){
     const c=D.recipeCost(rSel.value, Math.max(1,+pIn.value||1));
+    curTotal=c.total;
     const margin=+mR.value; document.getElementById("mv").textContent=margin+"%";
     const pvp=D.pvpFromMargin(c.perPortion,margin);
     document.getElementById("kTot").textContent=eur(c.total);
@@ -103,7 +105,7 @@
     document.getElementById("catGroups").innerHTML=names.filter(n=>active.has(n)).map(n=>{
       const lines=groups[n].slice().sort((a,b)=>b.cost-a.cost);
       const sub=lines.reduce((s,l)=>s+l.cost,0);
-      const rows=lines.map(l=>`<tr><td>${l.name}</td><td class="r tnum">${num(l.qty,3)} ${l.unit}</td><td class="r tnum">${eur(l.unitPrice)}</td><td class="r tnum">${eur(l.cost)}</td><td class="r tnum">${num(l.cost/c.total*100,1)}%</td></tr>`).join("");
+      const rows=lines.map(l=>`<tr><td>${l.name}</td><td class="r tnum">${num(l.qty,3)} ${l.unit}</td><td class="r tnum editable" data-id="${l.id}" data-field="price" data-qty="${l.qty}" title="Editar precio unitario">${eur(l.unitPrice)}</td><td class="r tnum editable" data-id="${l.id}" data-field="cost" data-qty="${l.qty}" title="Editar coste">${eur(l.cost)}</td><td class="r tnum editable" data-id="${l.id}" data-field="pct" data-qty="${l.qty}" title="Editar % de coste">${num(l.cost/c.total*100,1)}%</td></tr>`).join("");
       return `<div class="cat-group">
         <div class="cat-group__h"><span>${n}</span><span class="mono">${eur(sub)} · ${num(sub/c.total*100,0)}% del total</span></div>
         <table class="tbl"><thead><tr><th>Ingrediente</th><th>Cantidad</th><th>€/ud</th><th>Coste</th><th>% coste</th></tr></thead><tbody>${rows}</tbody></table>
@@ -124,6 +126,21 @@
     const n=b.getAttribute("data-cat");
     if(active.has(n)) active.delete(n); else active.add(n);
     render();
+  });
+  document.getElementById("catGroups").addEventListener("click",e=>{
+    const cell=e.target.closest(".editable"); if(!cell) return;
+    const id=cell.dataset.id, field=cell.dataset.field, qty=+cell.dataset.qty;
+    const price=D.ingMap[id].price;
+    const cur = field==="price"? price : field==="cost"? price*qty : (price*qty)/curTotal*100;
+    NovaApp.inlineEdit(cell,{value:cur.toFixed(field==="pct"?1:2), step:field==="pct"?"0.1":"0.01", min:0, onCommit:v=>{
+      const val=parseFloat(v); if(isNaN(val)||val<0){render();return;}
+      let newPrice;
+      if(field==="price") newPrice=val;
+      else if(field==="cost") newPrice=qty>0? val/qty : 0;
+      else { const newCost=(val/100)*curTotal; newPrice=qty>0? newCost/qty : 0; }
+      NovaApp.setPrice(id,newPrice); render();
+      NovaApp.toast("Precio actualizado · afecta a todos los escandallos");
+    }});
   });
   [rSel,pIn,mR].forEach(el=>el.addEventListener("input",render));
   render();

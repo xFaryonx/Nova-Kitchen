@@ -44,7 +44,7 @@
 </div>
 <script src="js/lib/gsap.min.js"></script>
 <script src="js/data.js"></script>
-<script src="js/custom.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script src="js/custom.js"></script><script src="js/overrides.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
 <script>
 (function(){
   NovaApp.init("carta");
@@ -54,14 +54,20 @@
   function render(){
     let dishes=D.menu.filter(m=>season==="todo"||m.season===season||m.season==="todo").map(m=>{
       const r=D.recipeMap[m.recipe],c=D.recipeCost(r.id,r.base);
-      return {cat:r.cat,name:r.name,cost:c.perPortion,pvp:m.pvp,fc:c.perPortion/m.pvp*100,margin:m.pvp-c.perPortion};
+      return {recipe:m.recipe,cat:r.cat,name:r.name,cost:c.perPortion,pvp:m.pvp,fc:c.perPortion/m.pvp*100,margin:m.pvp-c.perPortion};
     }).sort((a,b)=>order.indexOf(a.cat)-order.indexOf(b.cat));
     document.getElementById("kD").textContent=dishes.length;
     document.getElementById("kT").textContent=eur(dishes.reduce((a,d)=>a+d.pvp,0)/dishes.length);
     document.getElementById("kF").textContent=num(dishes.reduce((a,d)=>a+d.fc,0)/dishes.length,0)+"%";
     document.getElementById("kM").textContent=eur(dishes.reduce((a,d)=>a+d.margin,0)/dishes.length);
-    document.getElementById("rows").innerHTML=dishes.map(d=>`<tr><td><span class="tag">${d.cat}</span></td><td><b>${d.name}</b></td><td class="r tnum">${eur(d.cost)}</td><td class="r tnum">${eur(d.pvp)}</td><td class="r tnum">${d.fc>35?'<span class="tag tag--warn">'+num(d.fc,0)+'%</span>':'<span class="tag tag--ok">'+num(d.fc,0)+'%</span>'}</td><td class="r tnum">${eur(d.margin)}</td></tr>`).join("");
+    document.getElementById("rows").innerHTML=dishes.map(d=>`<tr><td><span class="tag">${d.cat}</span></td><td><b>${d.name}</b></td><td class="r tnum">${eur(d.cost)}</td><td class="r tnum editable" data-recipe="${d.recipe}" title="Editar PVP">${eur(d.pvp)}</td><td class="r tnum">${d.fc>35?'<span class="tag tag--warn">'+num(d.fc,0)+'%</span>':'<span class="tag tag--ok">'+num(d.fc,0)+'%</span>'}</td><td class="r tnum">${eur(d.margin)}</td></tr>`).join("");
+    NovaApp._bindCursor&&NovaApp._bindCursor();
   }
+  document.getElementById("rows").addEventListener("click",e=>{
+    const cell=e.target.closest(".editable"); if(!cell) return;
+    const rid=cell.dataset.recipe; const m=D.menu.find(x=>x.recipe===rid);
+    NovaApp.inlineEdit(cell,{value:m.pvp.toFixed(2),step:"0.10",min:0,onCommit:v=>{ const n=parseFloat(v); if(!isNaN(n)&&n>0){ NovaApp.setMenuPvp(rid,n); } render(); NovaApp.toast("PVP actualizado"); }});
+  });
   document.getElementById("season").addEventListener("click",e=>{const b=e.target.closest("[data-s]");if(!b)return;season=b.dataset.s;document.querySelectorAll("#season button").forEach(x=>x.classList.toggle("active",x===b));render();});
   render();
 })();

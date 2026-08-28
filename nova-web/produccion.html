@@ -32,27 +32,57 @@
         <div class="kpi"><span class="overline">Día más intenso</span><strong id="kPeak">—</strong></div>
       </div>
       <div class="board r-app" id="board"></div>
+      <div class="panel r-app" style="margin-top:20px">
+        <div class="panel__title">Programar elaboración</div>
+        <div class="add-row">
+          <div class="field"><label>Día</label><select id="addDay" data-testid="prod-day"></select></div>
+          <div class="field"><label>Receta</label><select id="addRec" data-testid="prod-recipe"></select></div>
+          <div class="field"><label>Raciones</label><input type="number" id="addPor" min="1" value="20" data-testid="prod-portions"></div>
+          <button class="btn" id="addTask" data-testid="prod-add"><span>Programar</span><span class="arw">→</span></button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 <script src="js/lib/gsap.min.js"></script>
 <script src="js/data.js"></script>
-<script src="js/custom.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script src="js/custom.js"></script><script src="js/overrides.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
 <script>
 (function(){
   NovaApp.init("produccion");
   const D=window.NOVA_DATA,eur=NovaApp.eur;
-  let totalCost=0,totalRac=0,totalEl=0,peak={day:"—",n:0};
-  document.getElementById("board").innerHTML=D.production.map(day=>{
-    let dc=0,dr=0;
-    const cards=day.tasks.map(t=>{const r=D.recipeMap[t.recipe];const c=D.recipeCost(r.id,t.portions);dc+=c.total;dr+=t.portions;totalEl++;return `<div class="pcard"><b>${r.name}</b><span>${t.portions} rac · ${eur(c.total)} · ${r.minutes}'</span></div>`;}).join("")||'<div class="pcard" style="border-color:var(--line-2);color:var(--ink-3)"><b>Descanso</b><span>Sin producción</span></div>';
-    totalCost+=dc;totalRac+=dr; if(dr>peak.n)peak={day:day.day,n:dr};
-    return `<div class="col"><div class="col__h">${day.day}<br><span class="mono" style="color:var(--ink-3);font-size:.9em">${eur(dc)}</span></div><div class="col__b">${cards}</div></div>`;
-  }).join("");
-  document.getElementById("kEl").textContent=totalEl;
-  document.getElementById("kRac").textContent=totalRac;
-  document.getElementById("kCost").textContent=eur(totalCost);
-  document.getElementById("kPeak").textContent=peak.day;
+  const addDay=document.getElementById("addDay"),addRec=document.getElementById("addRec");
+  addDay.innerHTML=D.production.map((d,i)=>`<option value="${i}">${d.day}</option>`).join("");
+  addRec.innerHTML=D.recipes.map(r=>`<option value="${r.id}">${r.name}</option>`).join("");
+  function render(){
+    let totalCost=0,totalRac=0,totalEl=0,peak={day:"—",n:0};
+    document.getElementById("board").innerHTML=D.production.map((day,di)=>{
+      let dc=0,dr=0;
+      const cards=day.tasks.map((t,ti)=>{const r=D.recipeMap[t.recipe];if(!r)return"";const c=D.recipeCost(r.id,t.portions);dc+=c.total;dr+=t.portions;totalEl++;
+        return `<div class="pcard"><button class="pcard__del" data-del-day="${di}" data-del-task="${ti}" title="Quitar" data-testid="prod-del-${di}-${ti}">×</button><b>${r.name}</b><span><span class="editable" data-day="${di}" data-task="${ti}" title="Editar raciones">${t.portions} rac</span> · ${eur(c.total)} · ${r.minutes}'</span></div>`;
+      }).join("")||'<div class="pcard" style="border-color:var(--line-2);color:var(--ink-3)"><b>Descanso</b><span>Sin producción</span></div>';
+      totalCost+=dc;totalRac+=dr; if(dr>peak.n)peak={day:day.day,n:dr};
+      return `<div class="col"><div class="col__h">${day.day}<br><span class="mono" style="color:var(--ink-3);font-size:.9em">${eur(dc)}</span></div><div class="col__b">${cards}</div></div>`;
+    }).join("");
+    document.getElementById("kEl").textContent=totalEl;
+    document.getElementById("kRac").textContent=totalRac;
+    document.getElementById("kCost").textContent=eur(totalCost);
+    document.getElementById("kPeak").textContent=peak.day;
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
+  document.getElementById("board").addEventListener("click",e=>{
+    const del=e.target.closest("[data-del-day]");
+    if(del){ D.production[+del.dataset.delDay].tasks.splice(+del.dataset.delTask,1); NovaApp.saveProduction(); render(); NovaApp.toast("Elaboración quitada"); return; }
+    const cell=e.target.closest(".editable"); if(!cell) return;
+    const t=D.production[+cell.dataset.day].tasks[+cell.dataset.task];
+    NovaApp.inlineEdit(cell,{value:t.portions,step:"1",min:1,onCommit:v=>{ const n=parseInt(v); if(!isNaN(n)&&n>0){ t.portions=n; NovaApp.saveProduction(); } render(); }});
+  });
+  document.getElementById("addTask").addEventListener("click",()=>{
+    const di=+addDay.value, rec=addRec.value, por=Math.max(1,parseInt(document.getElementById("addPor").value)||1);
+    D.production[di].tasks.push({recipe:rec,portions:por}); NovaApp.saveProduction(); render();
+    NovaApp.toast("Elaboración programada");
+  });
+  render();
 })();
 </script>
 <script src="js/calculator.js"></script>

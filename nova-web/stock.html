@@ -37,37 +37,80 @@
         <button data-f="exp" data-testid="filter-exp">Caducidad</button>
       </div></div>
       <div class="panel r-app" style="padding:0">
-        <table class="tbl"><thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mínimo</th><th>Estado</th><th>Caducidad</th><th>Valor</th></tr></thead>
+        <table class="tbl"><thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Mínimo</th><th>Estado</th><th>Caducidad</th><th>Valor</th><th></th></tr></thead>
         <tbody id="rows"></tbody></table>
+      </div>
+      <div class="panel r-app" style="margin-top:20px">
+        <div class="panel__title">Añadir producto al inventario</div>
+        <div class="add-row">
+          <div class="field"><label>Ingrediente</label><select id="addIng" data-testid="add-ing"></select></div>
+          <div class="field"><label>Cantidad</label><input type="number" id="addQty" step="0.1" min="0" value="5" data-testid="add-qty"></div>
+          <div class="field"><label>Mínimo</label><input type="number" id="addMin" step="0.1" min="0" value="2" data-testid="add-min"></div>
+          <div class="field"><label>Caducidad</label><input type="date" id="addExp" value="2026-07-15" data-testid="add-exp"></div>
+          <button class="btn" id="addBtn" data-testid="add-stock"><span>Añadir</span><span class="arw">→</span></button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 <script src="js/lib/gsap.min.js"></script>
 <script src="js/data.js"></script>
-<script src="js/custom.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script src="js/custom.js"></script><script src="js/overrides.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
 <script>
 (function(){
   NovaApp.init("stock");
   const D=window.NOVA_DATA,eur=NovaApp.eur,num=NovaApp.num,TODAY=new Date("2026-06-11");
   const days=s=>Math.round((new Date(s)-TODAY)/86400000);
-  const low=D.stock.filter(s=>s.qty<s.min), exp=D.stock.filter(s=>days(s.exp)<=4);
-  document.getElementById("kRef").textContent=D.stock.length;
-  document.getElementById("kLow").textContent=low.length;
-  document.getElementById("kExp").textContent=exp.length;
-  document.getElementById("kVal").textContent=eur(D.stock.reduce((a,s)=>a+s.qty*D.ingMap[s.ing].price,0));
+  const iso=d=>new Date(d).toISOString().slice(0,10);
   let f="all";
+  // selector de ingredientes para añadir
+  const addIng=document.getElementById("addIng");
+  addIng.innerHTML=D.ingredients.map(i=>`<option value="${i.id}">${i.name} (${i.unit})</option>`).join("");
+  function refreshKpis(){
+    const low=D.stock.filter(s=>s.qty<s.min), exp=D.stock.filter(s=>days(s.exp)<=4);
+    document.getElementById("kRef").textContent=D.stock.length;
+    document.getElementById("kLow").textContent=low.length;
+    document.getElementById("kExp").textContent=exp.length;
+    document.getElementById("kVal").textContent=eur(D.stock.reduce((a,s)=>a+s.qty*D.ingMap[s.ing].price,0));
+  }
   function render(){
-    let list=D.stock.slice();
-    if(f==="low")list=low; if(f==="exp")list=exp.slice().sort((a,b)=>days(a.exp)-days(b.exp));
-    document.getElementById("rows").innerHTML=list.map(s=>{
+    refreshKpis();
+    let list=D.stock.map((s,i)=>({s,i}));
+    if(f==="low") list=list.filter(x=>x.s.qty<x.s.min);
+    if(f==="exp") list=list.filter(x=>days(x.s.exp)<=4).sort((a,b)=>days(a.s.exp)-days(b.s.exp));
+    document.getElementById("rows").innerHTML=list.map(({s,i})=>{
       const ing=D.ingMap[s.ing],d=days(s.exp),isLow=s.qty<s.min;
       const st=isLow?'<span class="tag tag--warn"><span class="dot"></span>Bajo mínimos</span>':'<span class="tag tag--ok"><span class="dot"></span>Correcto</span>';
-      const ex=d<=4?`<span class="tag tag--warn">${d}d · ${new Date(s.exp).toLocaleDateString("es-ES")}</span>`:`<span class="tnum">${new Date(s.exp).toLocaleDateString("es-ES")}</span>`;
-      return `<tr><td><b>${ing.name}</b></td><td>${ing.cat}</td><td class="r tnum">${num(s.qty,1)} ${ing.unit}</td><td class="r tnum">${s.min} ${ing.unit}</td><td>${st}</td><td class="r">${ex}</td><td class="r tnum">${eur(s.qty*ing.price)}</td></tr>`;
-    }).join("");
+      const exCls=d<=4?'tag tag--warn':'tnum';
+      return `<tr data-i="${i}"><td><b>${ing.name}</b></td><td>${ing.cat}</td>
+        <td class="r tnum editable" data-field="qty" title="Editar cantidad">${num(s.qty,1)} ${ing.unit}</td>
+        <td class="r tnum editable" data-field="min" title="Editar mínimo">${num(s.min,1)} ${ing.unit}</td>
+        <td>${st}</td>
+        <td class="r editable" data-field="exp" title="Editar caducidad"><span class="${exCls}">${d<=4?d+'d · ':''}${new Date(s.exp).toLocaleDateString("es-ES")}</span></td>
+        <td class="r tnum">${eur(s.qty*ing.price)}</td>
+        <td class="r"><button class="icon-btn icon-btn--danger" data-del="${i}" title="Eliminar" data-testid="del-${s.ing}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`;
+    }).join("") || '<tr><td colspan="8" style="color:var(--ink-3);padding:20px">Sin resultados para este filtro.</td></tr>';
+    NovaApp._bindCursor&&NovaApp._bindCursor();
   }
+  document.getElementById("rows").addEventListener("click",e=>{
+    const del=e.target.closest("[data-del]");
+    if(del){ D.stock.splice(+del.dataset.del,1); NovaApp.saveStock(); render(); NovaApp.toast("Producto eliminado del inventario"); return; }
+    const cell=e.target.closest(".editable"); if(!cell) return;
+    const tr=cell.closest("[data-i]"); const idx=+tr.dataset.i; const s=D.stock[idx]; const field=cell.dataset.field;
+    if(field==="exp"){
+      NovaApp.inlineEdit(cell,{type:"date",value:iso(s.exp),onCommit:v=>{ s.exp=v; NovaApp.saveStock(); render(); }});
+    } else {
+      NovaApp.inlineEdit(cell,{value:num(s[field],1).replace(",","."),step:"0.1",min:0,onCommit:v=>{ const n=parseFloat(v); if(!isNaN(n)&&n>=0){ s[field]=n; NovaApp.saveStock(); } render(); }});
+    }
+  });
   document.getElementById("filter").addEventListener("click",e=>{const b=e.target.closest("[data-f]");if(!b)return;f=b.dataset.f;document.querySelectorAll("#filter button").forEach(x=>x.classList.toggle("active",x===b));render();});
+  document.getElementById("addBtn").addEventListener("click",()=>{
+    const ing=addIng.value, qty=parseFloat(document.getElementById("addQty").value)||0, min=parseFloat(document.getElementById("addMin").value)||0, exp=document.getElementById("addExp").value||"2026-12-31";
+    const existing=D.stock.find(s=>s.ing===ing);
+    if(existing){ existing.qty=qty; existing.min=min; existing.exp=exp; NovaApp.toast("Producto actualizado en inventario"); }
+    else { D.stock.push({ing,qty,min,exp}); NovaApp.toast("Producto añadido al inventario"); }
+    NovaApp.saveStock(); render();
+  });
   render();
 })();
 </script>
