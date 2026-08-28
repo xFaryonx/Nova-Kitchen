@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nova — Mermas</title>
+<link rel="stylesheet" href="css/base.css" /><link rel="stylesheet" href="css/landing.css" /><link rel="stylesheet" href="css/app.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2314130f'/><text x='50%25' y='58%25' font-family='Georgia' font-size='22' fill='%23D8451C' text-anchor='middle'>N</text></svg>" />
+</head>
+<body>
+<svg class="grain" xmlns="http://www.w3.org/2000/svg"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>
+<div class="scrim-m" id="scrimM"></div>
+<div class="app">
+  <aside class="side" id="side"></aside>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:14px">
+        <button class="mobile-nav" id="mobBtn" aria-label="Menú"><svg width="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <div class="topbar__crumb">Nova / <b>Mermas</b></div>
+      </div>
+      <div class="topbar__right"><div class="topbar__meta" id="topMeta"></div></div>
+    </div>
+    <div class="view">
+      <div class="view__head">
+        <span class="overline overline--ember">Control de pérdidas · 03·b</span>
+        <h1>Cuánto se te va por el desagüe</h1>
+        <p>Registra cada merma —caducidad, rotura, error o prueba— y Nova te dice el dinero perdido, por período y por motivo. Lo que se mide, se controla.</p>
+      </div>
+      <div class="kpis r-app">
+        <div class="kpi"><span class="overline">Merma total</span><strong id="kTot">—</strong></div>
+        <div class="kpi" style="background:var(--ember);color:#fff"><span class="overline" style="color:rgba(255,255,255,.7)">Este mes</span><strong id="kMonth" style="color:#fff">—</strong><small style="color:#fff">pérdida junio</small></div>
+        <div class="kpi"><span class="overline">Registros</span><strong id="kCnt">—</strong></div>
+        <div class="kpi"><span class="overline">Motivo principal</span><strong id="kTop" style="font-size:1.3rem">—</strong></div>
+      </div>
+
+      <div class="panel r-app">
+        <div class="panel__title">Registrar merma</div>
+        <div class="add-row" style="margin-top:0;border-top:0;padding-top:0">
+          <div class="field"><label>Ingrediente</label><select id="mIng" data-testid="merma-ing"></select></div>
+          <div class="field"><label>Cantidad (<span id="mUnit">kg</span>)</label><input type="number" id="mQty" step="0.01" min="0" value="1" data-testid="merma-qty"></div>
+          <div class="field"><label>Motivo</label><select id="mReason" data-testid="merma-reason">
+            <option>Caducidad</option><option>Rotura / deterioro</option><option>Error de elaboración</option><option>Prueba / degustación</option><option>Devolución</option><option>Otro</option>
+          </select></div>
+          <div class="field"><label>Fecha</label><input type="date" id="mDate" value="2026-06-11" data-testid="merma-date"></div>
+          <label class="stock-toggle" style="margin:0 4px"><input type="checkbox" id="mDeduct" checked data-testid="merma-deduct"><span class="stock-toggle__box"></span><span>Descontar del stock</span></label>
+          <button class="btn" id="mAdd" data-testid="merma-add"><span>Registrar merma</span><span class="arw">→</span></button>
+        </div>
+        <p class="ai-note" id="mPreview" style="margin-top:14px"></p>
+      </div>
+
+      <div class="two-col" style="margin-top:20px">
+        <div class="panel r-app" style="padding:0">
+          <div class="panel__title" style="padding:22px 24px 0">Histórico de mermas</div>
+          <table class="tbl"><thead><tr><th>Fecha</th><th>Ingrediente</th><th>Cantidad</th><th>Motivo</th><th>Coste</th><th></th></tr></thead>
+          <tbody id="rows"></tbody></table>
+        </div>
+        <div class="panel r-app">
+          <div class="panel__title">Pérdida por motivo</div>
+          <div id="byReason"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="js/lib/gsap.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/custom.js"></script><script src="js/overrides.js"></script><script src="js/guide.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script>
+(function(){
+  NovaApp.init("mermas");
+  const D=window.NOVA_DATA,eur=NovaApp.eur,num=NovaApp.num;
+  const mIng=document.getElementById("mIng"),mQty=document.getElementById("mQty"),mUnit=document.getElementById("mUnit");
+  function fillIng(){ mIng.innerHTML=D.ingredients.map(i=>`<option value="${i.id}">${i.name} (${i.unit})</option>`).join(""); syncUnit(); }
+  function syncUnit(){ const i=D.ingMap[mIng.value]; mUnit.textContent=i?i.unit:"kg"; preview(); }
+  function preview(){
+    const i=D.ingMap[mIng.value]; if(!i){document.getElementById("mPreview").textContent="";return;}
+    const q=parseFloat(mQty.value)||0;
+    document.getElementById("mPreview").innerHTML=`Coste de esta merma: <strong>${eur(q*i.price)}</strong> (${num(q,2)} ${i.unit} × ${eur(i.price)}/${i.unit}).`;
+  }
+  mIng.addEventListener("change",syncUnit); mQty.addEventListener("input",preview);
+  fillIng();
+
+  const list=()=>NovaApp.store.get("nova_mermas",[]);
+  function save(a){ NovaApp.store.set("nova_mermas",a); }
+
+  function render(){
+    const items=list();
+    const total=items.reduce((s,m)=>s+m.cost,0);
+    const month=items.filter(m=>(m.date||"").slice(0,7)==="2026-06").reduce((s,m)=>s+m.cost,0);
+    document.getElementById("kTot").textContent=eur(total);
+    document.getElementById("kMonth").textContent=eur(month);
+    document.getElementById("kCnt").textContent=items.length;
+    // motivo principal
+    const byR={}; items.forEach(m=>byR[m.reason]=(byR[m.reason]||0)+m.cost);
+    const top=Object.entries(byR).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById("kTop").textContent=top?top[0]:"—";
+    // tabla
+    document.getElementById("rows").innerHTML=items.length? items.slice().reverse().map(m=>{
+      const ing=D.ingMap[m.ing];
+      return `<tr><td class="tnum">${new Date(m.date).toLocaleDateString("es-ES")}</td><td><b>${ing?ing.name:m.ing}</b><br><span class="mono" style="font-size:.68rem;color:var(--ink-3)">${ing?ing.cat:''}</span></td><td class="r tnum">${num(m.qty,2)} ${ing?ing.unit:''}</td><td><span class="tag tag--warn">${m.reason}</span></td><td class="r tnum">${eur(m.cost)}</td><td class="r"><button class="icon-btn icon-btn--danger" data-del="${m.id}" title="Eliminar" data-testid="merma-del-${m.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></td></tr>`;
+    }).join("") : '<tr><td colspan="6" style="color:var(--ink-3);padding:20px">Aún no hay mermas registradas. Registra la primera arriba.</td></tr>';
+    // por motivo
+    const reasons=Object.entries(byR).sort((a,b)=>b[1]-a[1]);
+    document.getElementById("byReason").innerHTML=reasons.length? reasons.map(([r,v])=>`
+      <div class="ai-suggest" style="cursor:default"><div><strong>${r}</strong></div>
+        <div class="ai-cover"><span style="width:${Math.round(v/total*100)}%"></span></div>
+        <span class="mono">${eur(v)} · ${Math.round(v/total*100)}%</span></div>`).join("")
+      : '<div class="memitem" style="color:var(--ink-3);border:0">Sin datos todavía.</div>';
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
+
+  document.getElementById("mAdd").addEventListener("click",()=>{
+    const ing=mIng.value, i=D.ingMap[ing]; if(!i) return;
+    const qty=parseFloat(mQty.value)||0; if(qty<=0){ NovaApp.toast("Indica una cantidad válida"); return; }
+    const reason=document.getElementById("mReason").value;
+    const date=document.getElementById("mDate").value||"2026-06-11";
+    const cost=qty*i.price;
+    const arr=list(); arr.push({id:"m_"+Date.now().toString(36), ing, qty, reason, date, cost }); save(arr);
+    // descontar del stock
+    if(document.getElementById("mDeduct").checked){
+      const st=D.stock.find(s=>s.ing===ing);
+      if(st){ st.qty=Math.max(0, st.qty-qty); NovaApp.saveStock(); }
+    }
+    render();
+    NovaApp.toast(`Merma registrada · ${eur(cost)} perdidos`);
+  });
+  document.getElementById("rows").addEventListener("click",e=>{
+    const del=e.target.closest("[data-del]"); if(!del) return;
+    save(list().filter(m=>m.id!==del.dataset.del)); render(); NovaApp.toast("Registro de merma eliminado");
+  });
+  render();
+})();
+</script>
+<script src="js/calculator.js"></script>
+</body>
+</html>
