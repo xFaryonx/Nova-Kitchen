@@ -25,10 +25,24 @@
         <h1>Recetas que se adaptan solas</h1>
         <p>Escala cualquier receta al número de raciones que necesites. Nova recalcula ingredientes, alérgenos y coste al instante, y guarda cada versión.</p>
         <div class="head-actions">
-          <button class="btn" id="newRecipeBtn" data-testid="new-recipe-btn"><span>+ Nueva receta</span></button>
+          <button class="btn" id="whatBtn" data-testid="what-cook-btn"><span>¿Qué cocino con…?</span></button>
+          <button class="btn btn--ghost" id="newRecipeBtn" data-testid="new-recipe-btn"><span>+ Nueva receta</span></button>
           <button class="btn btn--ghost" id="newIngBtn" data-testid="new-ingredient-btn"><span>+ Nuevo ingrediente</span></button>
         </div>
       </div>
+
+      <!-- Qué cocino con estos ingredientes -->
+      <div class="creator" id="whatCreator"><div class="creator__in">
+        <h3>¿Qué cocino con…?</h3>
+        <p style="color:var(--ink-2);margin:0 0 14px;font-size:.98rem">Selecciona uno o varios ingredientes y Nova te dirá qué recetas puedes preparar, ordenadas por coincidencia.</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px">
+          <label class="overline">Ingredientes (<span id="whatCount">0</span> seleccionados)</label>
+          <button class="tag" id="whatClear" style="cursor:pointer" data-testid="what-clear">Limpiar</button>
+        </div>
+        <div class="alerg-picker" id="whatPick" data-testid="what-picker" style="max-height:180px;overflow-y:auto"></div>
+        <label class="overline">Recetas disponibles</label>
+        <div class="ai-suggests" id="whatResults" style="margin-top:12px"></div>
+      </div></div>
 
       <!-- Crear ingrediente -->
       <div class="creator" id="ingCreator"><div class="creator__in">
@@ -146,6 +160,53 @@
   document.getElementById("newRecipeBtn").addEventListener("click",()=>{recC.classList.toggle("open");ingC.classList.remove("open");});
   document.getElementById("cancelIng").addEventListener("click",()=>ingC.classList.remove("open"));
   document.getElementById("cancelRec").addEventListener("click",()=>recC.classList.remove("open"));
+
+  /* ---- ¿Qué cocino con…? ---- */
+  const whatC=document.getElementById("whatCreator");
+  const whatPick=document.getElementById("whatPick");
+  const whatResults=document.getElementById("whatResults");
+  const selected=new Set();
+  document.getElementById("whatBtn").addEventListener("click",()=>{
+    whatC.classList.toggle("open");recC.classList.remove("open");ingC.classList.remove("open");
+    if(whatC.classList.contains("open")) buildPicker();
+  });
+  function buildPicker(){
+    whatPick.innerHTML=D.ingredients.map(i=>`<button class="alerg-chip ${selected.has(i.id)?'on':''}" data-ing="${i.id}" data-testid="pick-${i.id}">${i.name}</button>`).join("");
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
+  whatPick.addEventListener("click",e=>{
+    const c=e.target.closest("[data-ing]");if(!c)return;
+    const id=c.getAttribute("data-ing");
+    if(selected.has(id)){selected.delete(id);c.classList.remove("on");}else{selected.add(id);c.classList.add("on");}
+    renderWhat();
+  });
+  document.getElementById("whatClear").addEventListener("click",()=>{selected.clear();buildPicker();renderWhat();});
+  function renderWhat(){
+    document.getElementById("whatCount").textContent=selected.size;
+    if(!selected.size){whatResults.innerHTML='<div class="memitem" style="color:var(--ink-3);border:0">Selecciona ingredientes para ver recetas disponibles.</div>';return;}
+    const sel=[...selected];
+    const scored=D.recipes.map(r=>{
+      const ids=r.items.map(it=>it.ing);
+      const matched=sel.filter(s=>ids.includes(s));
+      return {r,matched:matched.length,total:ids.length};
+    }).filter(x=>x.matched>0).sort((a,b)=>b.matched-a.matched || a.total-b.total);
+    if(!scored.length){whatResults.innerHTML='<div class="memitem" style="color:var(--ink-3);border:0">Ninguna receta usa esos ingredientes todavía. Prueba con otros o crea una receta nueva.</div>';return;}
+    whatResults.innerHTML=scored.map(s=>{
+      const all=s.matched===sel.length && sel.length>1;
+      const pct=Math.round(s.matched/sel.length*100);
+      return `<button class="ai-suggest ai-suggest--btn" data-goto="${s.r.id}" data-testid="what-recipe-${s.r.id}">
+        <div><strong>${s.r.name}</strong>${all?' <span class="tag tag--ok" style="margin-left:8px">usa todos</span>':''}<span class="ai-tag">${s.r.cat}</span></div>
+        <div class="ai-cover"><span style="width:${pct}%"></span></div>
+        <span class="mono">${s.matched}/${sel.length} · ${s.total} ingr.</span>
+      </button>`;
+    }).join("");
+    whatResults.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>{
+      selectR(b.getAttribute("data-goto"));
+      document.getElementById("detail").scrollIntoView({behavior:"smooth",block:"start"});
+    }));
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
+  renderWhat();
 
   const slug=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
 
