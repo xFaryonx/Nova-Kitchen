@@ -24,7 +24,47 @@
         <span class="overline overline--ember">Recetario · 02</span>
         <h1>Recetas que se adaptan solas</h1>
         <p>Escala cualquier receta al número de raciones que necesites. Nova recalcula ingredientes, alérgenos y coste al instante, y guarda cada versión.</p>
+        <div class="head-actions">
+          <button class="btn" id="newRecipeBtn" data-testid="new-recipe-btn"><span>+ Nueva receta</span></button>
+          <button class="btn btn--ghost" id="newIngBtn" data-testid="new-ingredient-btn"><span>+ Nuevo ingrediente</span></button>
+        </div>
       </div>
+
+      <!-- Crear ingrediente -->
+      <div class="creator" id="ingCreator"><div class="creator__in">
+        <h3>Nuevo ingrediente</h3>
+        <div class="form-grid">
+          <div class="field"><label>Nombre</label><input id="ingName" type="text" placeholder="Ej. Trufa negra" data-testid="ing-name"></div>
+          <div class="field"><label>Categoría</label><input id="ingCat" type="text" placeholder="Ej. Especias" value="Otros"></div>
+          <div class="field"><label>Unidad</label><select id="ingUnit"><option>kg</option><option>L</option><option>ud</option></select></div>
+          <div class="field"><label>Precio (€/ud)</label><input id="ingPrice" type="number" step="0.01" min="0" value="0.00" data-testid="ing-price"></div>
+        </div>
+        <label class="overline">Alérgenos</label>
+        <div class="alerg-picker" id="ingAlerg"></div>
+        <div class="creator__actions">
+          <button class="btn" id="saveIngBtn" data-testid="save-ingredient"><span>Guardar ingrediente</span><span class="arw">→</span></button>
+          <button class="btn btn--ghost" id="cancelIng"><span>Cancelar</span></button>
+        </div>
+      </div></div>
+
+      <!-- Crear receta -->
+      <div class="creator" id="recCreator"><div class="creator__in">
+        <h3>Nueva receta</h3>
+        <div class="form-grid">
+          <div class="field"><label>Nombre</label><input id="recName" type="text" placeholder="Ej. Tataki de atún" data-testid="rec-name"></div>
+          <div class="field"><label>Categoría</label><select id="recCat"><option>Entrante</option><option>Principal</option><option>Postre</option></select></div>
+          <div class="field"><label>Raciones base</label><input id="recBase" type="number" min="1" value="4" data-testid="rec-base"></div>
+          <div class="field"><label>Tiempo (min)</label><input id="recMin" type="number" min="1" value="30"></div>
+        </div>
+        <label class="overline">Ingredientes (cantidad para las raciones base)</label>
+        <div class="ing-rows" id="recIngRows"></div>
+        <button class="btn btn--ghost" id="addIngRow" style="margin-bottom:16px"><span>+ Añadir ingrediente</span></button>
+        <div class="field" style="margin-bottom:16px"><label>Elaboración (un paso por línea)</label><textarea id="recSteps" placeholder="Marcar el atún&#10;Napar con la salsa..."></textarea></div>
+        <div class="creator__actions">
+          <button class="btn" id="saveRecBtn" data-testid="save-recipe"><span>Guardar receta</span><span class="arw">→</span></button>
+          <button class="btn btn--ghost" id="cancelRec"><span>Cancelar</span></button>
+        </div>
+      </div></div>
       <div class="two-col">
         <div class="rlist r-app" id="rlist"></div>
         <div class="panel r-app" id="detail"></div>
@@ -33,7 +73,8 @@
   </div>
 </div>
 <script src="js/lib/gsap.min.js"></script>
-<script src="js/data.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script src="js/data.js"></script>
+<script src="js/custom.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
 <script>
 (function(){
   NovaApp.init("recetas");
@@ -68,12 +109,76 @@
           <div style="margin-top:20px"><span class="overline">Alérgenos</span><div class="al-row" style="margin-top:10px">${badges}</div></div>
         </div>
       </div>
-      <button class="btn r-app" id="saveV" style="margin-top:22px" data-testid="save-version"><span>Guardar versión (${portions} rac)</span><span class="arw">→</span></button>`;
+      <div class="creator__actions no-print" style="margin-top:22px">
+        <button class="btn r-app" id="saveV" data-testid="save-version"><span>Guardar versión (${portions} rac)</span><span class="arw">→</span></button>
+        <button class="btn btn--ghost" id="printR" data-print data-testid="print-recipe"><span>Imprimir / PDF</span></button>
+      </div>`;
     const pr=document.getElementById("pr");
     pr.addEventListener("input",()=>{portions=+pr.value;document.getElementById("pv").textContent=portions;render();});
     document.getElementById("saveV").addEventListener("click",()=>{const v=NovaApp.store.get("nova_versions",[]);v.unshift({recipe:cur.name,portions,when:new Date().toISOString()});NovaApp.store.set("nova_versions",v);NovaApp.toast("Versión guardada en memoria");});
     NovaApp._bindCursor&&NovaApp._bindCursor();
   }
+  function buildList(){
+    rlist.innerHTML=D.recipes.map(r=>`<button data-id="${r.id}" data-testid="recipe-${r.id}"><b>${r.name}${r.custom?' <span class="tag" style="font-size:.6rem">propia</span>':''}</b><small>${r.cat} · base ${r.base} rac · ${r.minutes} min</small></button>`).join("");
+    rlist.querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.id===cur.id));
+  }
+
+  /* ---- Selectores de alérgenos para nuevo ingrediente ---- */
+  const alergBox=document.getElementById("ingAlerg");
+  alergBox.innerHTML=Object.keys(D.allergenLabels).map(a=>`<span class="alerg-chip" data-a="${a}">${D.allergenLabels[a]}</span>`).join("");
+  alergBox.addEventListener("click",e=>{const c=e.target.closest("[data-a]");if(c)c.classList.toggle("on");});
+
+  /* ---- Filas de ingredientes para nueva receta ---- */
+  const rowsBox=document.getElementById("recIngRows");
+  function ingOptions(){return D.ingredients.map(i=>`<option value="${i.id}">${i.name} (${i.unit})</option>`).join("");}
+  function addRow(){
+    const div=document.createElement("div");div.className="ing-row";
+    div.innerHTML=`<select>${ingOptions()}</select><input type="number" step="0.001" min="0" placeholder="cantidad" value="0.100"><button type="button" aria-label="Quitar">×</button>`;
+    div.querySelector("button").addEventListener("click",()=>div.remove());
+    rowsBox.appendChild(div);
+  }
+  addRow();addRow();
+  document.getElementById("addIngRow").addEventListener("click",addRow);
+
+  /* ---- Toggle paneles ---- */
+  const ingC=document.getElementById("ingCreator"),recC=document.getElementById("recCreator");
+  document.getElementById("newIngBtn").addEventListener("click",()=>{ingC.classList.toggle("open");recC.classList.remove("open");});
+  document.getElementById("newRecipeBtn").addEventListener("click",()=>{recC.classList.toggle("open");ingC.classList.remove("open");});
+  document.getElementById("cancelIng").addEventListener("click",()=>ingC.classList.remove("open"));
+  document.getElementById("cancelRec").addEventListener("click",()=>recC.classList.remove("open"));
+
+  const slug=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+
+  /* ---- Guardar ingrediente ---- */
+  document.getElementById("saveIngBtn").addEventListener("click",()=>{
+    const name=document.getElementById("ingName").value.trim();
+    if(!name){NovaApp.toast("Ponle un nombre al ingrediente");return;}
+    const id="c_"+slug(name)+"_"+Date.now().toString(36);
+    const allergens=[...alergBox.querySelectorAll(".on")].map(c=>c.getAttribute("data-a"));
+    const o={id,name,unit:document.getElementById("ingUnit").value,price:parseFloat(document.getElementById("ingPrice").value)||0,cat:document.getElementById("ingCat").value.trim()||"Otros",allergens,custom:true};
+    NovaApp.saveIngredient(o);
+    document.getElementById("ingName").value="";alergBox.querySelectorAll(".on").forEach(c=>c.classList.remove("on"));
+    NovaApp.toast("Ingrediente guardado · Nova lo recordará");
+  });
+
+  /* ---- Guardar receta ---- */
+  document.getElementById("saveRecBtn").addEventListener("click",()=>{
+    const name=document.getElementById("recName").value.trim();
+    if(!name){NovaApp.toast("Ponle un nombre a la receta");return;}
+    const items=[...rowsBox.querySelectorAll(".ing-row")].map(r=>({ing:r.querySelector("select").value,qty:parseFloat(r.querySelector("input").value)||0})).filter(it=>it.qty>0);
+    if(!items.length){NovaApp.toast("Añade al menos un ingrediente");return;}
+    const steps=document.getElementById("recSteps").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    const id="c_"+slug(name)+"_"+Date.now().toString(36);
+    const o={id,name,cat:document.getElementById("recCat").value,base:Math.max(1,+document.getElementById("recBase").value||1),minutes:+document.getElementById("recMin").value||30,season:["todo"],steps:steps.length?steps:["Elaboración por definir"],items,custom:true};
+    NovaApp.saveRecipe(o);
+    recC.classList.remove("open");
+    document.getElementById("recName").value="";document.getElementById("recSteps").value="";
+    rowsBox.innerHTML="";addRow();addRow();
+    buildList();selectR(id);
+    NovaApp.toast("Receta guardada · disponible en Nova y escandallos");
+  });
+
+  buildList();
   selectR(cur.id);
 })();
 </script>

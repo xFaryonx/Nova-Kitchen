@@ -59,6 +59,7 @@ window.NovaApp = (function () {
         <div class="side__user">
           <div class="side__avatar">${initials}</div>
           <div><b>${p.name}</b><span>${p.company}</span></div>
+          <button class="side__logout" id="logoutBtn" aria-label="Cerrar sesión" data-testid="logout-btn" data-cursor><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
         </div>
       </div>`;
     const p2=profile();
@@ -69,6 +70,8 @@ window.NovaApp = (function () {
     const mob=document.getElementById("mobBtn"), scrim=document.getElementById("scrimM");
     if(mob){mob.addEventListener("click",()=>{side.classList.add("open");scrim.classList.add("show");});
       scrim.addEventListener("click",()=>{side.classList.remove("open");scrim.classList.remove("show");});}
+    const lo=document.getElementById("logoutBtn");
+    if(lo) lo.addEventListener("click",logout);
   }
 
   /* ---- Toast ---- */
@@ -107,11 +110,110 @@ window.NovaApp = (function () {
     });
   }
 
+  /* ---- Acceso local (login + onboarding) ---- */
+  function isAuthed(){ return store.get("nova_session",false)===true; }
+  function isOnboarded(){ const p=store.get("nova_profile",null); return !!(p && p.onboarded===true); }
+  function admin(){ return store.get("nova_admin", { user:"Dominguiito11", pass:"TeAmoFran" }); }
+  const CUISINES=["Cocina de mercado","Alta cocina / gastronómico","Cocina tradicional","Catering / colectividades","Hotel / restauración","Obrador / pastelería","Bistró / brasserie","Cocina de autor"];
+
+  function showGate(active){
+    const g=document.createElement("div"); g.className="gate";
+    document.body.appendChild(g);
+    requestAnimationFrame(()=>g.classList.add("open"));
+
+    const brand=`<div class="gate__brand"><svg viewBox="0 0 32 32" fill="none"><path d="M9 23V9l14 14V9" stroke="#D8451C" stroke-width="2.4"/></svg> Nova</div>`;
+
+    function close(){
+      g.classList.remove("open");
+      setTimeout(()=>{ g.remove(); }, 520);
+      buildShell(active);
+      window.dispatchEvent(new Event("nova:profile"));
+      if(NovaApp._bindCursor) NovaApp._bindCursor();
+    }
+
+    function renderLogin(){
+      g.innerHTML=`
+        <div class="gate__card" data-testid="login-card">
+          ${brand}
+          <div class="gate__eyebrow">Acceso profesional</div>
+          <h2 class="gate__title">Entra a tu cocina</h2>
+          <p class="gate__sub">Introduce tus credenciales para acceder al sistema.</p>
+          <form id="loginForm" class="gate__form">
+            <label class="gate__field"><span>Usuario</span><input id="gUser" type="text" autocomplete="username" placeholder="Usuario" data-testid="login-user"></label>
+            <label class="gate__field"><span>Contraseña</span><input id="gPass" type="password" autocomplete="current-password" placeholder="Contraseña" data-testid="login-pass"></label>
+            <div class="gate__err" id="gErr"></div>
+            <button class="btn btn--ember btn--lg" type="submit" style="width:100%;justify-content:center" data-testid="login-submit"><span>Acceder</span><span class="arw">→</span></button>
+          </form>
+          <div class="gate__hint mono">Acceso local · sin servidor</div>
+        </div>`;
+      g.querySelector("#loginForm").addEventListener("submit",e=>{
+        e.preventDefault();
+        const u=g.querySelector("#gUser").value.trim(), pw=g.querySelector("#gPass").value;
+        const a=admin();
+        if(u===a.user && pw===a.pass){ store.set("nova_session",true); if(isOnboarded()) close(); else renderOnboard(); }
+        else { const er=g.querySelector("#gErr"); er.textContent="Usuario o contraseña incorrectos."; er.classList.add("show"); }
+      });
+      if(NovaApp._bindCursor) NovaApp._bindCursor();
+    }
+
+    function renderOnboard(){
+      const p=store.get("nova_profile",{});
+      g.innerHTML=`
+        <div class="gate__card" data-testid="onboarding-card">
+          ${brand}
+          <div class="gate__eyebrow">Bienvenido · 1 minuto</div>
+          <h2 class="gate__title">Personalicemos Nova</h2>
+          <p class="gate__sub">Cuéntanos quién eres para adaptar el asistente a tu cocina.</p>
+          <form id="obForm" class="gate__form">
+            <label class="gate__field"><span>Tu nombre</span><input id="obName" type="text" placeholder="Ej. Chef Aitor" value="${p.name||''}" data-testid="ob-name"></label>
+            <label class="gate__field"><span>Empresa / establecimiento</span><input id="obCompany" type="text" placeholder="Ej. Grupo Nova" value="${p.company||''}" data-testid="ob-company"></label>
+            <label class="gate__field"><span>Tipo de cocina</span>
+              <select id="obCuisine" data-testid="ob-cuisine">${CUISINES.map(c=>`<option ${p.cuisine===c?'selected':''}>${c}</option>`).join("")}</select></label>
+            <div class="gate__err" id="obErr"></div>
+            <button class="btn btn--ember btn--lg" type="submit" style="width:100%;justify-content:center" data-testid="ob-submit"><span>Empezar a cocinar con Nova</span><span class="arw">→</span></button>
+          </form>
+        </div>`;
+      g.querySelector("#obForm").addEventListener("submit",e=>{
+        e.preventDefault();
+        const name=g.querySelector("#obName").value.trim();
+        const company=g.querySelector("#obCompany").value.trim();
+        const cuisine=g.querySelector("#obCuisine").value;
+        if(!name||!company){ const er=g.querySelector("#obErr"); er.textContent="Completa tu nombre y tu empresa."; er.classList.add("show"); return; }
+        store.set("nova_profile",{ name, company, cuisine, role:"Jefe de cocina", onboarded:true });
+        close();
+      });
+      if(NovaApp._bindCursor) NovaApp._bindCursor();
+    }
+
+    if(!isAuthed()) renderLogin(); else renderOnboard();
+  }
+  function logout(){ store.set("nova_session",false); location.href="index.html"; }
+
+  /* ---- Impresión / PDF ---- */
+  let printBound=false;
+  function bindPrint(){
+    if(printBound) return; printBound=true;
+    document.addEventListener("click", e=>{ if(e.target.closest("[data-print]")){ e.preventDefault(); window.print(); } });
+  }
+
+  /* ---- Guardado de datos personalizados ---- */
+  function saveIngredient(o){
+    const arr=store.get("nova_custom_ings",[]); arr.push(o); store.set("nova_custom_ings",arr);
+    window.NOVA_DATA.registerIngredient(o);
+  }
+  function saveRecipe(o){
+    const arr=store.get("nova_custom_recipes",[]); arr.push(o); store.set("nova_custom_recipes",arr);
+    window.NOVA_DATA.registerRecipe(o);
+  }
+
   function init(active){
     buildShell(active);
     initCursor();
     reveal();
+    bindPrint();
+    if(!isAuthed() || !isOnboarded()){ showGate(active); return false; }
+    return true;
   }
 
-  return { init, profile, log, pushLog, toast, eur, num, store, _bindCursor:null };
+  return { init, profile, log, pushLog, toast, eur, num, store, logout, saveIngredient, saveRecipe, isAuthed, isOnboarded, _bindCursor:null };
 })();

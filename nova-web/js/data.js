@@ -184,9 +184,20 @@ window.NOVA_DATA = (function () {
     return cost / (1 - marginPct/100);
   }
 
+  // Registro de datos personalizados (mutando los mismos arrays/mapas)
+  function registerIngredient(o){
+    if(!o||!o.id||ingMap[o.id]) return false;
+    ingredients.push(o); ingMap[o.id]=o; return true;
+  }
+  function registerRecipe(o){
+    if(!o||!o.id||recipeMap[o.id]) return false;
+    recipes.push(o); recipeMap[o.id]=o; return true;
+  }
+
   return {
     ingredients, ingMap, recipes, recipeMap, stock, suppliers, menu,
     production, appcc, allergenLabels,
-    recipeCost, recipeAllergens, pvpFromMargin
+    recipeCost, recipeAllergens, pvpFromMargin,
+    registerIngredient, registerRecipe
   };
 })();

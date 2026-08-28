@@ -53,3 +53,16 @@ del hero se ha resuelto de forma nativa y agnóstica combinando fotografía gene
 movimiento (ken-burns, parallax y una capa de vapor en `<canvas>`), logrando sensación
 de vídeo sin depender de ficheros de vídeo externos. Todo lo demás (imágenes generadas y
 tratadas con estética coherente, copy profesional y motion) está entregado.
+
+## Acceso y novedades
+- **Acceso a la app**: al entrar en `app.html` o cualquier módulo, Nova pide login.
+  Cuenta de administrador semilla: usuario `Dominguiito11`, contraseña `TeAmoFran`.
+  Tras el primer acceso, un **onboarding** pide nombre, empresa y tipo de cocina para
+  personalizar el saludo y los datos. (Login **local**, sin servidor: es una puerta de
+  acceso/personalización, no seguridad real, porque el sitio es estático.)
+- **Recetas e ingredientes propios** (`recetas.html`): crea y guarda tus recetas e
+  ingredientes; Nova los recuerda (`localStorage`) y quedan disponibles en el asistente,
+  escandallos, alérgenos, etc.
+- **Exportar / Imprimir**: botón «Imprimir / PDF» en Escandallos y en la ficha de Receta
+  (usa el diálogo de impresión del navegador → «Guardar como PDF»).
+- **Cerrar sesión**: icono en el pie de la barra lateral.
