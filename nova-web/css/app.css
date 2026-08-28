@@ -208,3 +208,26 @@ input[type=range]{width:100%;accent-color:var(--ember)}
 .stock-toggle input:checked + .stock-toggle__box{background:var(--olive)}
 .stock-toggle input:checked + .stock-toggle__box::after{transform:translateX(20px)}
 .stock-toggle input:focus-visible + .stock-toggle__box{outline:2px solid var(--ember);outline-offset:2px}
+
+/* ---------- Escandallo por categorías ---------- */
+.cat-filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+.cat-chip{display:inline-flex;align-items:center;gap:9px;padding:.6em .95em;border-radius:100px;
+  border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);font-size:.86rem;
+  transition:border-color .25s var(--ease),color .25s var(--ease),background .25s var(--ease),opacity .25s}
+.cat-chip__dot{width:9px;height:9px;border-radius:50%;background:var(--line-2);transition:background .25s}
+.cat-chip__sub{font-family:var(--mono);font-size:.68rem;color:var(--ink-3);padding-left:4px;border-left:1px solid var(--line);margin-left:2px}
+.cat-chip.on{border-color:var(--ink);color:var(--ink);background:var(--paper-2)}
+.cat-chip.on .cat-chip__dot{background:var(--ember)}
+.cat-chip:not(.on){opacity:.55}
+.cat-chip:hover{opacity:1;border-color:var(--ink-3)}
+.cat-group{margin-bottom:22px;border:1px solid var(--line)}
+.cat-group__h{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;
+  background:var(--ink);color:var(--paper)}
+.cat-group__h span:first-child{font-family:var(--serif);font-size:1.15rem;letter-spacing:-0.01em}
+.cat-group__h .mono{font-size:.72rem;color:#b7b4a9}
+.cat-group .tbl th{background:var(--paper-2)}
+.cat-total{margin-top:6px}
+.cat-total__row{display:flex;justify-content:space-between;align-items:baseline;padding:10px 4px;border-top:1px solid var(--line);font-size:.95rem;color:var(--ink-2)}
+.cat-total__row b{font-family:var(--serif);font-size:1.15rem;font-weight:400;color:var(--ink)}
+.cat-total__row--main{border-top:2px solid var(--ink);color:var(--ink);font-weight:600}
+.cat-total__row--main b{font-size:1.5rem}
