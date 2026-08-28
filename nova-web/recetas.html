@@ -26,6 +26,7 @@
         <p>Escala cualquier receta al número de raciones que necesites. Nova recalcula ingredientes, alérgenos y coste al instante, y guarda cada versión.</p>
         <div class="head-actions">
           <button class="btn" id="whatBtn" data-testid="what-cook-btn"><span>¿Qué cocino con…?</span></button>
+          <button class="btn btn--ghost" id="libBtn" data-testid="library-btn"><span>Librería de recetas</span></button>
           <button class="btn btn--ghost" id="newRecipeBtn" data-testid="new-recipe-btn"><span>+ Nueva receta</span></button>
           <button class="btn btn--ghost" id="newIngBtn" data-testid="new-ingredient-btn"><span>+ Nuevo ingrediente</span></button>
         </div>
@@ -35,6 +36,11 @@
       <div class="creator" id="whatCreator"><div class="creator__in">
         <h3>¿Qué cocino con…?</h3>
         <p style="color:var(--ink-2);margin:0 0 14px;font-size:.98rem">Selecciona uno o varios ingredientes y Nova te dirá qué recetas puedes preparar, ordenadas por coincidencia.</p>
+        <label class="stock-toggle" data-testid="stock-only-label">
+          <input type="checkbox" id="stockOnly" data-testid="stock-only">
+          <span class="stock-toggle__box"></span>
+          <span>Usar solo ingredientes en stock</span>
+        </label>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px">
           <label class="overline">Ingredientes (<span id="whatCount">0</span> seleccionados)</label>
           <button class="tag" id="whatClear" style="cursor:pointer" data-testid="what-clear">Limpiar</button>
@@ -42,6 +48,18 @@
         <div class="alerg-picker" id="whatPick" data-testid="what-picker" style="max-height:180px;overflow-y:auto"></div>
         <label class="overline">Recetas disponibles</label>
         <div class="ai-suggests" id="whatResults" style="margin-top:12px"></div>
+      </div></div>
+
+      <!-- Librería de recetas (local) -->
+      <div class="creator" id="libCreator"><div class="creator__in">
+        <h3>Librería de recetas</h3>
+        <p style="color:var(--ink-2);margin:0 0 8px;font-size:.98rem">Colección lista para usar, incluida en la app (funciona sin conexión). Añade las que quieras a «Mis recetas» y Nova las recordará y las usará en escandallos, alérgenos y sugerencias.</p>
+        <label class="stock-toggle" data-testid="lib-stock-only-label" style="margin-bottom:16px">
+          <input type="checkbox" id="libStockOnly" data-testid="lib-stock-only">
+          <span class="stock-toggle__box"></span>
+          <span>Mostrar solo las que puedo hacer con mi stock</span>
+        </label>
+        <div class="ai-suggests" id="libResults"></div>
       </div></div>
 
       <!-- Crear ingrediente -->
@@ -88,7 +106,7 @@
 </div>
 <script src="js/lib/gsap.min.js"></script>
 <script src="js/data.js"></script>
-<script src="js/custom.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
+<script src="js/custom.js"></script><script src="js/library.js"></script><script src="js/nova-ai.js"></script><script src="js/app-core.js"></script>
 <script>
 (function(){
   NovaApp.init("recetas");
@@ -165,15 +183,23 @@
   const whatC=document.getElementById("whatCreator");
   const whatPick=document.getElementById("whatPick");
   const whatResults=document.getElementById("whatResults");
+  const stockOnlyBox=document.getElementById("stockOnly");
   const selected=new Set();
+  const stockSet=new Set(D.stock.filter(s=>s.qty>0).map(s=>s.ing));
   document.getElementById("whatBtn").addEventListener("click",()=>{
-    whatC.classList.toggle("open");recC.classList.remove("open");ingC.classList.remove("open");
+    whatC.classList.toggle("open");recC.classList.remove("open");ingC.classList.remove("open");libC.classList.remove("open");
     if(whatC.classList.contains("open")) buildPicker();
   });
+  function pickerList(){ return stockOnlyBox.checked ? D.ingredients.filter(i=>stockSet.has(i.id)) : D.ingredients; }
   function buildPicker(){
-    whatPick.innerHTML=D.ingredients.map(i=>`<button class="alerg-chip ${selected.has(i.id)?'on':''}" data-ing="${i.id}" data-testid="pick-${i.id}">${i.name}</button>`).join("");
+    whatPick.innerHTML=pickerList().map(i=>`<button class="alerg-chip ${selected.has(i.id)?'on':''}" data-ing="${i.id}" data-testid="pick-${i.id}">${i.name}</button>`).join("")
+      || '<span class="mono" style="color:var(--ink-3)">No hay ingredientes en stock.</span>';
     NovaApp._bindCursor&&NovaApp._bindCursor();
   }
+  stockOnlyBox.addEventListener("change",()=>{
+    if(stockOnlyBox.checked){ [...selected].forEach(id=>{ if(!stockSet.has(id)) selected.delete(id); }); }
+    buildPicker(); renderWhat();
+  });
   whatPick.addEventListener("click",e=>{
     const c=e.target.closest("[data-ing]");if(!c)return;
     const id=c.getAttribute("data-ing");
@@ -183,19 +209,24 @@
   document.getElementById("whatClear").addEventListener("click",()=>{selected.clear();buildPicker();renderWhat();});
   function renderWhat(){
     document.getElementById("whatCount").textContent=selected.size;
+    const so=stockOnlyBox.checked;
     if(!selected.size){whatResults.innerHTML='<div class="memitem" style="color:var(--ink-3);border:0">Selecciona ingredientes para ver recetas disponibles.</div>';return;}
     const sel=[...selected];
-    const scored=D.recipes.map(r=>{
+    let scored=D.recipes.map(r=>{
       const ids=r.items.map(it=>it.ing);
       const matched=sel.filter(s=>ids.includes(s));
-      return {r,matched:matched.length,total:ids.length};
-    }).filter(x=>x.matched>0).sort((a,b)=>b.matched-a.matched || a.total-b.total);
-    if(!scored.length){whatResults.innerHTML='<div class="memitem" style="color:var(--ink-3);border:0">Ninguna receta usa esos ingredientes todavía. Prueba con otros o crea una receta nueva.</div>';return;}
+      const inStock=ids.every(id=>stockSet.has(id));
+      return {r,matched:matched.length,total:ids.length,inStock};
+    }).filter(x=>x.matched>0);
+    if(so) scored=scored.filter(x=>x.inStock);
+    scored.sort((a,b)=>b.matched-a.matched || a.total-b.total);
+    if(!scored.length){whatResults.innerHTML=`<div class="memitem" style="color:var(--ink-3);border:0">${so?'Ninguna receta se puede completar solo con tu stock actual. Desmarca la casilla o repón ingredientes.':'Ninguna receta usa esos ingredientes todavía. Prueba con otros o crea una receta nueva.'}</div>`;return;}
     whatResults.innerHTML=scored.map(s=>{
       const all=s.matched===sel.length && sel.length>1;
       const pct=Math.round(s.matched/sel.length*100);
+      const tag=all?'<span class="tag tag--ok" style="margin-left:8px">usa todos</span>':(s.inStock&&so?'<span class="tag tag--ok" style="margin-left:8px">en stock</span>':'');
       return `<button class="ai-suggest ai-suggest--btn" data-goto="${s.r.id}" data-testid="what-recipe-${s.r.id}">
-        <div><strong>${s.r.name}</strong>${all?' <span class="tag tag--ok" style="margin-left:8px">usa todos</span>':''}<span class="ai-tag">${s.r.cat}</span></div>
+        <div><strong>${s.r.name}</strong>${tag}<span class="ai-tag">${s.r.cat}</span></div>
         <div class="ai-cover"><span style="width:${pct}%"></span></div>
         <span class="mono">${s.matched}/${sel.length} · ${s.total} ingr.</span>
       </button>`;
@@ -207,6 +238,36 @@
     NovaApp._bindCursor&&NovaApp._bindCursor();
   }
   renderWhat();
+
+  /* ---- Librería de recetas (local) ---- */
+  const libC=document.getElementById("libCreator");
+  const libResults=document.getElementById("libResults");
+  const libStockBox=document.getElementById("libStockOnly");
+  document.getElementById("libBtn").addEventListener("click",()=>{
+    libC.classList.toggle("open");whatC.classList.remove("open");recC.classList.remove("open");ingC.classList.remove("open");
+    if(libC.classList.contains("open")) renderLib();
+  });
+  libStockBox.addEventListener("change",renderLib);
+  function libPer(rec){ const total=rec.items.reduce((s,it)=>s+it.qty*D.ingMap[it.ing].price,0); return total/rec.base; }
+  function renderLib(){
+    let list=(window.NOVA_LIBRARY||[]).map(rec=>({rec,exists:!!D.recipeMap[rec.id],inStock:rec.items.every(it=>stockSet.has(it.ing))}));
+    if(libStockBox.checked) list=list.filter(x=>x.inStock);
+    if(!list.length){libResults.innerHTML='<div class="memitem" style="color:var(--ink-3);border:0">Ninguna receta de la librería se puede hacer solo con tu stock. Desmarca la casilla para verlas todas.</div>';return;}
+    libResults.innerHTML=list.map(({rec,exists,inStock})=>`
+      <div class="ai-suggest" style="cursor:default">
+        <div><strong>${rec.name}</strong>${inStock?'<span class="tag tag--ok" style="margin-left:8px">en stock</span>':''}<span class="ai-tag">${rec.cat} · ${rec.minutes}min · ${NovaApp.eur(libPer(rec))}/rac</span></div>
+        ${exists?'<span class="tag tag--ok">Añadida ✓</span>':`<button class="tag" style="cursor:pointer;background:var(--ink);color:#fff" data-add="${rec.id}" data-testid="lib-add-${rec.id}">+ Añadir a mis recetas</button>`}
+      </div>`).join("");
+    libResults.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",()=>{
+      const rec=window.NOVA_LIBRARY.find(r=>r.id===b.getAttribute("data-add"));
+      if(!rec) return;
+      NovaApp.saveRecipe(Object.assign({},rec,{season:rec.season||["todo"],custom:true}));
+      buildList(); renderLib();
+      NovaApp.toast(`"${rec.name}" añadida a tus recetas`);
+    }));
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
+
 
   const slug=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
 

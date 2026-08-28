@@ -105,7 +105,22 @@ window.NOVA_DATA = (function () {
     { ing:"leche", qty:9.0, min:6, exp:"2026-06-20" },
     { ing:"jamon", qty:0.8, min:2, exp:"2026-08-01" },
     { ing:"aceite", qty:11.0, min:5, exp:"2027-03-01" },
-    { ing:"queso_crema", qty:3.0, min:2, exp:"2026-06-28" }
+    { ing:"queso_crema", qty:3.0, min:2, exp:"2026-06-28" },
+    { ing:"ajo", qty:2.5, min:1, exp:"2026-09-15" },
+    { ing:"zanahoria", qty:6.0, min:3, exp:"2026-07-05" },
+    { ing:"apio", qty:1.8, min:1, exp:"2026-06-22" },
+    { ing:"patata", qty:22.0, min:8, exp:"2026-10-01" },
+    { ing:"champinon", qty:3.5, min:2, exp:"2026-06-15" },
+    { ing:"huevo", qty:9.0, min:4, exp:"2026-06-24" },
+    { ing:"caldo", qty:8.0, min:4, exp:"2026-12-01" },
+    { ing:"sal", qty:6.0, min:2, exp:"2028-01-01" },
+    { ing:"pimienta", qty:0.9, min:0.3, exp:"2027-06-01" },
+    { ing:"azucar", qty:7.0, min:3, exp:"2027-08-01" },
+    { ing:"limon", qty:4.0, min:2, exp:"2026-06-26" },
+    { ing:"mantequilla", qty:4.0, min:2, exp:"2026-07-12" },
+    { ing:"pasta_lasana", qty:5.0, min:2, exp:"2027-02-01" },
+    { ing:"vino_blanco", qty:6.0, min:2, exp:"2027-04-01" },
+    { ing:"albahaca", qty:0.4, min:0.2, exp:"2026-06-14" }
   ];
 
   /* ---- Proveedores + precios por ingrediente ---- */

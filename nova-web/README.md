@@ -66,3 +66,15 @@ tratadas con estética coherente, copy profesional y motion) está entregado.
 - **Exportar / Imprimir**: botón «Imprimir / PDF» en Escandallos y en la ficha de Receta
   (usa el diálogo de impresión del navegador → «Guardar como PDF»).
 - **Cerrar sesión**: icono en el pie de la barra lateral.
+
+## Recetas: buscador por ingredientes, stock y librería
+- **¿Qué cocino con…?**: selecciona uno o varios ingredientes y Nova lista las recetas por
+  coincidencia. Incluye una casilla **«Usar solo ingredientes en stock»**: al activarla, el
+  selector se limita a lo que tienes en inventario y los resultados muestran solo recetas
+  completables con tu stock actual.
+- **Librería de recetas (local)**: colección incluida en la app (`js/library.js`), funciona
+  **sin conexión**. Explórala, filtra por «las que puedo hacer con mi stock» y añade las que
+  quieras a «Mis recetas»; Nova las recordará y las usará en escandallos, alérgenos y sugerencias.
+  > Conectar una librería *online* (TheMealDB, Spoonacular, Edamam…) es técnicamente posible,
+  > pero requeriría internet y, en algunos casos, claves/CORS, rompiendo el funcionamiento
+  > agnóstico `file://`. Por eso la librería se entrega **empaquetada en local**.
