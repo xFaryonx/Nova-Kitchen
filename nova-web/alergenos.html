@@ -22,10 +22,19 @@
     <div class="view">
       <div class="view__head">
         <span class="overline overline--ember">Normativa · 07</span>
-        <h1>Los 14 alérgenos, detectados solos</h1>
+        <h1>Los alérgenos, detectados solos</h1>
         <p>Nova cruza los ingredientes de cada receta con los 14 alérgenos de declaración obligatoria (Reglamento UE 1169/2011) y genera el etiquetado.</p>
       </div>
       <div class="ctrl-row r-app"><div class="field" style="min-width:260px"><label>Receta</label><select id="rSel" data-testid="al-recipe"></select></div></div>
+      <div class="panel r-app" style="margin-bottom:20px">
+        <div class="panel__title">Catálogo de alérgenos <span class="tag">editable</span></div>
+        <div class="alerg-picker" id="alCatalog" data-testid="al-catalog"></div>
+        <div class="add-row" style="margin-top:14px">
+          <div class="field"><label>Nuevo alérgeno</label><input type="text" id="alNew" placeholder="Ej. Trazas de frutos secos" data-testid="al-new-name"></div>
+          <button class="btn" id="alAdd" data-testid="al-add"><span>Añadir alérgeno</span><span class="arw">→</span></button>
+        </div>
+        <p class="ai-note" style="margin-top:12px">Los alérgenos que añadas aquí quedan disponibles al crear ingredientes en el recetario. Pulsa la × para quitar uno.</p>
+      </div>
       <div class="two-col">
         <div class="panel r-app">
           <div class="panel__title" id="alTitle">Detección</div>
@@ -50,22 +59,36 @@
 (function(){
   NovaApp.init("alergenos");
   const D=window.NOVA_DATA;
-  const AL=Object.keys(D.allergenLabels);
+  const slug=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
   const rSel=document.getElementById("rSel");
   rSel.innerHTML=D.recipes.map(r=>`<option value="${r.id}">${r.name}</option>`).join("");
+  const short={gluten:"Glu",crustaceos:"Cru",huevo:"Hue",pescado:"Pes",cacahuetes:"Cac",soja:"Soj",lactosa:"Lác",frutos_cascara:"Fru",apio:"Api",mostaza:"Mos",sesamo:"Sés",sulfitos:"Sul",altramuces:"Alt",moluscos:"Mol"};
+  function renderCatalog(){
+    document.getElementById("alCatalog").innerHTML=Object.keys(D.allergenLabels).map(k=>`<span class="alerg-chip on" data-k="${k}" style="cursor:default">${D.allergenLabels[k]} <b data-del="${k}" style="cursor:pointer;margin-left:6px" title="Quitar">×</b></span>`).join("");
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
   function render(){
-    const id=rSel.value,r=D.recipeMap[id],al=D.recipeAllergens(id);
+    const AL=Object.keys(D.allergenLabels);
+    const id=rSel.value,r=D.recipeMap[id],al=D.recipeAllergens(id).filter(a=>D.allergenLabels[a]);
     document.getElementById("alTitle").innerHTML=`${r.name} <span class="tag ${al.length?'tag--warn':'tag--ok'}">${al.length} detectados</span>`;
     document.getElementById("grid").innerHTML=AL.map(a=>`<div class="al-cell ${al.includes(a)?'is-on':''}"><span>${D.allergenLabels[a]}</span></div>`).join("");
     const ings=al.map(a=>{const list=r.items.filter(it=>D.ingMap[it.ing].allergens.includes(a)).map(it=>D.ingMap[it.ing].name);return `<div class="memitem"><em>${D.allergenLabels[a]}</em> — presente en: ${list.join(", ")}</div>`;}).join("");
     document.getElementById("report").innerHTML= al.length? `<p style="margin:0 0 14px;color:var(--ink-2)">Este plato <strong>contiene ${al.length} alérgeno(s)</strong> de declaración obligatoria. Debe figurar en carta.</p>${ings}<div class="al-row" style="margin-top:16px">${al.map(a=>`<span class="al-badge">${D.allergenLabels[a]}</span>`).join("")}</div>`
       : `<p style="color:var(--olive)"><strong>Sin alérgenos de declaración obligatoria detectados.</strong> Verifica siempre trazas según tu proveedor.</p>`;
+    document.getElementById("matrix").innerHTML=`<thead><tr><th>Plato</th>${AL.map(a=>`<th title="${D.allergenLabels[a]}">${short[a]||D.allergenLabels[a].slice(0,3)}</th>`).join("")}</tr></thead><tbody>${D.recipes.map(rr=>{const ra=D.recipeAllergens(rr.id);return `<tr><td><b>${rr.name}</b></td>${AL.map(a=>`<td class="r">${ra.includes(a)?'<span class="dot" style="display:inline-block;background:var(--ember)"></span>':'<span style="color:var(--line-2)">·</span>'}</td>`).join("")}</tr>`;}).join("")}</tbody>`;
   }
   rSel.addEventListener("change",render);
-  // matriz
-  const short={gluten:"Glu",crustaceos:"Cru",huevo:"Hue",pescado:"Pes",cacahuetes:"Cac",soja:"Soj",lactosa:"Lác",frutos_cascara:"Fru",apio:"Api",mostaza:"Mos",sesamo:"Sés",sulfitos:"Sul",altramuces:"Alt",moluscos:"Mol"};
-  document.getElementById("matrix").innerHTML=`<thead><tr><th>Plato</th>${AL.map(a=>`<th title="${D.allergenLabels[a]}">${short[a]}</th>`).join("")}</tr></thead><tbody>${D.recipes.map(r=>{const al=D.recipeAllergens(r.id);return `<tr><td><b>${r.name}</b></td>${AL.map(a=>`<td class="r">${al.includes(a)?'<span class="dot" style="display:inline-block;background:var(--ember)"></span>':'<span style="color:var(--line-2)">·</span>'}</td>`).join("")}</tr>`;}).join("")}</tbody>`;
-  render();
+  document.getElementById("alCatalog").addEventListener("click",e=>{
+    const del=e.target.closest("[data-del]"); if(!del) return;
+    delete D.allergenLabels[del.dataset.del]; NovaApp.saveAllergens(); renderCatalog(); render(); NovaApp.toast("Alérgeno eliminado del catálogo");
+  });
+  document.getElementById("alAdd").addEventListener("click",()=>{
+    const label=(document.getElementById("alNew").value||"").trim(); if(!label){NovaApp.toast("Escribe el nombre del alérgeno");return;}
+    let key=slug(label)||("al_"+Date.now().toString(36)); if(D.allergenLabels[key]) key+="_"+Date.now().toString(36);
+    D.allergenLabels[key]=label; NovaApp.saveAllergens(); document.getElementById("alNew").value="";
+    renderCatalog(); render(); NovaApp.toast(`"${label}" añadido · ya elegible en el recetario`);
+  });
+  renderCatalog(); render();
 })();
 </script>
 <script src="js/calculator.js"></script>

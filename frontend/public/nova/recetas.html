@@ -143,11 +143,13 @@
       </div>
       <div class="creator__actions no-print" style="margin-top:22px">
         <button class="btn r-app" id="saveV" data-testid="save-version"><span>Guardar versión (${portions} rac)</span><span class="arw">→</span></button>
+        <button class="btn btn--ghost" id="editR" data-testid="edit-recipe"><span>Editar receta</span></button>
         <button class="btn btn--ghost" id="printR" data-print data-testid="print-recipe"><span>Imprimir / PDF</span></button>
       </div>`;
     const pr=document.getElementById("pr");
     pr.addEventListener("input",()=>{portions=+pr.value;document.getElementById("pv").textContent=portions;render();});
     document.getElementById("saveV").addEventListener("click",()=>{const v=NovaApp.store.get("nova_versions",[]);v.unshift({recipe:cur.name,portions,when:new Date().toISOString()});NovaApp.store.set("nova_versions",v);NovaApp.toast("Versión guardada en memoria");});
+    document.getElementById("editR").addEventListener("click",()=>openEdit(cur));
     NovaApp._bindCursor&&NovaApp._bindCursor();
   }
   function buildList(){
@@ -283,15 +285,45 @@
     NovaApp.toast("Ingrediente guardado · Nova lo recordará");
   });
 
-  /* ---- Guardar receta ---- */
+  /* ---- Guardar / editar receta ---- */
+  let editId=null;
+  function openEdit(recipe){
+    editId=recipe.id;
+    recC.classList.add("open"); whatC.classList.remove("open"); ingC.classList.remove("open"); libC.classList.remove("open");
+    document.getElementById("recName").value=recipe.name;
+    document.getElementById("recCat").value=recipe.cat;
+    document.getElementById("recBase").value=recipe.base;
+    document.getElementById("recMin").value=recipe.minutes;
+    document.getElementById("recSteps").value=(recipe.steps||[]).join("\n");
+    rowsBox.innerHTML="";
+    recipe.items.forEach(it=>{ addRow(); const row=rowsBox.lastChild; row.querySelector("select").value=it.ing; row.querySelector("input").value=it.qty; });
+    document.querySelector("#recCreator h3").textContent="Editar receta";
+    document.querySelector("#saveRecBtn span").textContent="Guardar cambios";
+    recC.scrollIntoView({behavior:"smooth",block:"start"});
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
   document.getElementById("saveRecBtn").addEventListener("click",()=>{
     const name=document.getElementById("recName").value.trim();
     if(!name){NovaApp.toast("Ponle un nombre a la receta");return;}
     const items=[...rowsBox.querySelectorAll(".ing-row")].map(r=>({ing:r.querySelector("select").value,qty:parseFloat(r.querySelector("input").value)||0})).filter(it=>it.qty>0);
     if(!items.length){NovaApp.toast("Añade al menos un ingrediente");return;}
     const steps=document.getElementById("recSteps").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    const base=Math.max(1,+document.getElementById("recBase").value||1), minutes=+document.getElementById("recMin").value||30, catv=document.getElementById("recCat").value;
+    if(editId){
+      const prev=D.recipeMap[editId];
+      const o={id:editId,name,cat:catv,base,minutes,season:prev.season||["todo"],steps:steps.length?steps:["Elaboración por definir"],items,custom:prev.custom||false};
+      NovaApp.updateRecipe(editId,o);
+      const savedId=editId; editId=null;
+      document.querySelector("#recCreator h3").textContent="Nueva receta";
+      document.querySelector("#saveRecBtn span").textContent="Guardar receta";
+      recC.classList.remove("open");
+      document.getElementById("recName").value="";document.getElementById("recSteps").value="";rowsBox.innerHTML="";addRow();addRow();
+      buildList();selectR(savedId);
+      NovaApp.toast("Receta actualizada");
+      return;
+    }
     const id="c_"+slug(name)+"_"+Date.now().toString(36);
-    const o={id,name,cat:document.getElementById("recCat").value,base:Math.max(1,+document.getElementById("recBase").value||1),minutes:+document.getElementById("recMin").value||30,season:["todo"],steps:steps.length?steps:["Elaboración por definir"],items,custom:true};
+    const o={id,name,cat:catv,base,minutes,season:["todo"],steps:steps.length?steps:["Elaboración por definir"],items,custom:true};
     NovaApp.saveRecipe(o);
     recC.classList.remove("open");
     document.getElementById("recName").value="";document.getElementById("recSteps").value="";
@@ -301,7 +333,8 @@
   });
 
   buildList();
-  selectR(cur.id);
+  var _pr=new URLSearchParams(location.search).get("recipe");
+  selectR(_pr && D.recipeMap[_pr] ? _pr : cur.id);
 })();
 </script>
 <script src="js/calculator.js"></script>

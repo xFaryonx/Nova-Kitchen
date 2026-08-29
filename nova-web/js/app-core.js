@@ -98,7 +98,7 @@ window.NovaApp = (function () {
       el.addEventListener("mouseenter",()=>ring.classList.add("is-active"));
       el.addEventListener("mouseleave",()=>ring.classList.remove("is-active"));
     });
-    bind(); NovaApp._bindCursor=bind;
+    bind(); window.NovaApp._bindCursor=bind;
   }
 
   /* ---- Reveal ligero de secciones ---- */
@@ -129,7 +129,7 @@ window.NovaApp = (function () {
       setTimeout(()=>{ g.remove(); }, 520);
       buildShell(active);
       window.dispatchEvent(new Event("nova:profile"));
-      if(NovaApp._bindCursor) NovaApp._bindCursor();
+      if(window.NovaApp._bindCursor) window.NovaApp._bindCursor();
     }
 
     function renderLogin(){
@@ -154,7 +154,7 @@ window.NovaApp = (function () {
         if(u===a.user && pw===a.pass){ store.set("nova_session",true); if(isOnboarded()) close(); else renderOnboard(); }
         else { const er=g.querySelector("#gErr"); er.textContent="Usuario o contraseña incorrectos."; er.classList.add("show"); }
       });
-      if(NovaApp._bindCursor) NovaApp._bindCursor();
+      if(window.NovaApp._bindCursor) window.NovaApp._bindCursor();
     }
 
     function renderOnboard(){
@@ -183,7 +183,7 @@ window.NovaApp = (function () {
         store.set("nova_profile",{ name, company, cuisine, role:"Jefe de cocina", onboarded:true });
         close();
       });
-      if(NovaApp._bindCursor) NovaApp._bindCursor();
+      if(window.NovaApp._bindCursor) window.NovaApp._bindCursor();
     }
 
     if(!isAuthed()) renderLogin(); else renderOnboard();
@@ -223,6 +223,13 @@ window.NovaApp = (function () {
   }
   function saveStock(){ store.set("nova_stock", D().stock); }
   function saveProduction(){ store.set("nova_production", D().production); }
+  function updateRecipe(id, o){
+    o.id=id; D().recipeMap[id]=o;
+    const idx=D().recipes.findIndex(r=>r.id===id); if(idx>=0) D().recipes[idx]=o; else D().recipes.push(o);
+    const ro=store.get("nova_recipe_overrides",{}); ro[id]=o; store.set("nova_recipe_overrides",ro);
+  }
+  function saveAllergens(){ store.set("nova_allergens", Object.assign({}, D().allergenLabels)); }
+  function saveSuppliers(){ store.set("nova_suppliers", D().suppliers); }
 
   /* ---- Edición inline de celdas ---- */
   function inlineEdit(el, opts){
@@ -254,5 +261,5 @@ window.NovaApp = (function () {
     return true;
   }
 
-  return { init, profile, log, pushLog, toast, eur, num, store, logout, saveIngredient, saveRecipe, isAuthed, isOnboarded, setPrice, setSupplierPrice, setMenuPvp, saveStock, saveProduction, inlineEdit, _bindCursor:null };
+  return { init, profile, log, pushLog, toast, eur, num, store, logout, saveIngredient, saveRecipe, isAuthed, isOnboarded, setPrice, setSupplierPrice, setMenuPvp, saveStock, saveProduction, updateRecipe, saveAllergens, saveSuppliers, inlineEdit, _bindCursor:null };
 })();

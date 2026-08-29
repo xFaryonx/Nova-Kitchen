@@ -26,8 +26,36 @@
         <p>Nova compara en vivo lo que te cobra cada proveedor por la misma referencia y resalta la opción más rentable. Sin llamadas ni hojas de cálculo.</p>
       </div>
       <div class="kpis r-app" id="cards" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr))"></div>
+
+      <div class="panel r-app" id="supPanel" style="display:none">
+        <div class="panel__title" id="supFormTitle">Nuevo distribuidor</div>
+        <div class="add-row">
+          <div class="field"><label>Nombre</label><input type="text" id="supName" placeholder="Ej. Frutas El Pinar" data-testid="supplier-name-input"></div>
+          <div class="field"><label>Especialidad</label><input type="text" id="supTag" placeholder="Ej. Verduras y frutas" data-testid="supplier-tag-input"></div>
+          <div class="field"><label>Entrega (días)</label><input type="number" id="supLead" min="0" step="1" value="1" data-testid="supplier-lead-input"></div>
+          <div class="field"><label>Pedido mínimo (€)</label><input type="number" id="supMin" min="0" step="1" value="50" data-testid="supplier-min-input"></div>
+          <button class="btn" id="supSave" data-testid="supplier-save"><span>Guardar distribuidor</span><span class="arw">→</span></button>
+        </div>
+        <p class="ai-note" style="margin-top:12px">Se guarda en este navegador y aparece como columna en la comparativa. Usa «Editar» en la tarjeta de un distribuidor para corregir sus datos.</p>
+      </div>
+
+      <div class="panel r-app" id="prodPanel" style="display:none">
+        <div class="panel__title">Añadir producto a la comparativa</div>
+        <div class="add-row">
+          <div class="field" style="min-width:260px"><label>Ingrediente</label><select id="prodSel" data-testid="product-select"></select></div>
+          <button class="btn" id="prodAdd" data-testid="product-add"><span>Añadir a la tabla</span><span class="arw">→</span></button>
+        </div>
+        <p class="ai-note" style="margin-top:12px">Pulsa la × junto a un producto para quitarlo de la comparativa. Sus precios se conservan por si vuelves a añadirlo.</p>
+      </div>
+
       <div class="panel r-app" style="padding:0;margin-top:20px">
-        <div class="panel__title" style="padding:22px 24px 0">Comparativa de precios <span class="tag tag--ok">verde = mejor precio</span></div>
+        <div class="panel__title" style="padding:22px 24px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+          <span>Comparativa de precios <span class="tag tag--ok">verde = mejor precio</span></span>
+          <span style="display:flex;gap:10px">
+            <button class="btn btn--ghost" id="addProd" data-testid="add-product-btn"><span>+ Producto</span></button>
+            <button class="btn btn--ghost" id="addSup" data-testid="add-supplier-btn"><span>+ Distribuidor</span></button>
+          </span>
+        </div>
         <div style="overflow-x:auto"><table class="tbl ai-table--sup" id="matrix"></table></div>
       </div>
     </div>
@@ -40,30 +68,99 @@
 (function(){
   NovaApp.init("proveedores");
   const D=window.NOVA_DATA,eur=NovaApp.eur;
-  document.getElementById("cards").innerHTML=D.suppliers.map(s=>`<div class="kpi"><span class="overline">${s.tag}</span><strong style="font-size:1.4rem">${s.name}</strong><small>${Object.keys(s.prices).length} refs · entrega ${s.lead}d · mín ${eur(s.min)}</small></div>`).join("");
-  const items=["tomate","cebolla","salmon","gamba","ternera","cerdo","parmesano","nata","harina","aceite","arroz"];
+  const slug=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+  const DEFAULT_ITEMS=["tomate","cebolla","salmon","gamba","ternera","cerdo","parmesano","nata","harina","aceite","arroz"];
+  let items=(NovaApp.store.get("nova_supplier_items",null)||DEFAULT_ITEMS).filter(id=>D.ingMap[id]);
+  function saveItems(){NovaApp.store.set("nova_supplier_items",items);}
+  let editSupId=null;
+
+  function renderCards(){
+    document.getElementById("cards").innerHTML=D.suppliers.map(s=>`<div class="kpi"><span class="overline">${s.tag}</span><strong style="font-size:1.4rem">${s.name}</strong><small>${Object.keys(s.prices).length} refs · entrega ${s.lead}d · mín ${eur(s.min)}</small><div style="margin-top:10px"><button class="btn btn--ghost" data-edit-sup="${s.id}" data-testid="edit-supplier-${s.id}" style="padding:8px 14px;font-size:.8rem"><span>Editar</span></button></div></div>`).join("");
+    NovaApp._bindCursor&&NovaApp._bindCursor();
+  }
+
   const matrix=document.getElementById("matrix");
   function render(){
     const rows=items.map(id=>{
       const prices=D.suppliers.map(s=>s.prices[id]);
       const valid=prices.filter(p=>p!=null); const min=valid.length?Math.min(...valid):null;
       const tds=D.suppliers.map(s=>{const p=s.prices[id];return `<td class="r tnum editable ${p===min&&p!=null?'cell-best':''}" data-sup="${s.id}" data-ing="${id}" title="Editar precio">${p!=null?eur(p):'+ añadir'}</td>`;}).join("");
-      return `<tr><td><b>${D.ingMap[id].name}</b></td>${tds}</tr>`;
+      return `<tr><td><b>${D.ingMap[id].name}</b> <b data-rm-prod="${id}" data-testid="remove-product-${id}" style="cursor:pointer;color:var(--ember);margin-left:6px" title="Quitar de la comparativa">×</b></td>${tds}</tr>`;
     }).join("");
     matrix.innerHTML=`<thead><tr><th>Producto</th>${D.suppliers.map(s=>`<th class="r">${s.name.split(" ")[0]}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`;
     NovaApp._bindCursor&&NovaApp._bindCursor();
   }
+
+  /* ---- Edición de precios + quitar producto ---- */
   matrix.addEventListener("click",e=>{
+    const rm=e.target.closest("[data-rm-prod]");
+    if(rm){
+      const id=rm.dataset.rmProd;
+      items=items.filter(x=>x!==id); saveItems(); render();
+      NovaApp.toast(`"${D.ingMap[id].name}" quitado de la comparativa`);
+      return;
+    }
     const cell=e.target.closest(".editable"); if(!cell) return;
     const sup=cell.dataset.sup, ing=cell.dataset.ing;
     const p=D.suppliers.find(s=>s.id===sup).prices[ing];
     NovaApp.inlineEdit(cell,{value:(p!=null?p:D.ingMap[ing].price).toFixed(2),step:"0.01",min:0,onCommit:v=>{
-      const n=parseFloat(v); if(!isNaN(n)&&n>=0){ NovaApp.setSupplierPrice(sup,ing,n); }
+      const n=parseFloat(v); if(!isNaN(n)&&n>=0){ NovaApp.setSupplierPrice(sup,ing,n); NovaApp.saveSuppliers(); }
       render();
       NovaApp.toast("Precio de proveedor actualizado");
     }});
   });
-  render();
+
+  /* ---- Formulario de distribuidor (alta + edición) ---- */
+  const supPanel=document.getElementById("supPanel"), prodPanel=document.getElementById("prodPanel");
+  function openSupForm(sup){
+    editSupId=sup?sup.id:null;
+    document.getElementById("supFormTitle").textContent=sup?`Editar distribuidor · ${sup.name}`:"Nuevo distribuidor";
+    document.getElementById("supName").value=sup?sup.name:"";
+    document.getElementById("supTag").value=sup?sup.tag:"";
+    document.getElementById("supLead").value=sup?sup.lead:1;
+    document.getElementById("supMin").value=sup?sup.min:50;
+    prodPanel.style.display="none"; supPanel.style.display="";
+    supPanel.scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
+  document.getElementById("addSup").addEventListener("click",()=>{ supPanel.style.display==="none"?openSupForm(null):supPanel.style.display="none"; });
+  document.getElementById("cards").addEventListener("click",e=>{
+    const b=e.target.closest("[data-edit-sup]"); if(!b) return;
+    const sup=D.suppliers.find(s=>s.id===b.dataset.editSup); if(sup) openSupForm(sup);
+  });
+  document.getElementById("supSave").addEventListener("click",()=>{
+    const name=document.getElementById("supName").value.trim();
+    const tag=document.getElementById("supTag").value.trim()||"General";
+    const lead=Math.max(0,parseInt(document.getElementById("supLead").value,10)||0);
+    const min=Math.max(0,parseFloat(document.getElementById("supMin").value)||0);
+    if(!name){NovaApp.toast("Escribe el nombre del distribuidor");return;}
+    if(editSupId){
+      const sup=D.suppliers.find(s=>s.id===editSupId);
+      if(sup){sup.name=name;sup.tag=tag;sup.lead=lead;sup.min=min;}
+      NovaApp.saveSuppliers(); NovaApp.toast(`Distribuidor "${name}" actualizado`);
+    }else{
+      let id=slug(name)||("sup_"+Date.now().toString(36));
+      if(D.suppliers.some(s=>s.id===id)) id+="_"+Date.now().toString(36);
+      D.suppliers.push({id,name,tag,lead,min,prices:{}});
+      NovaApp.saveSuppliers(); NovaApp.toast(`Distribuidor "${name}" añadido · asigna sus precios en la tabla`);
+    }
+    supPanel.style.display="none"; renderCards(); render();
+  });
+
+  /* ---- Alta de producto en la comparativa ---- */
+  function openProdForm(){
+    const avail=D.ingredients.filter(i=>!items.includes(i.id));
+    if(!avail.length){NovaApp.toast("Todos los ingredientes ya están en la comparativa");return;}
+    document.getElementById("prodSel").innerHTML=avail.map(i=>`<option value="${i.id}">${i.name} (${i.unit})</option>`).join("");
+    supPanel.style.display="none"; prodPanel.style.display="";
+  }
+  document.getElementById("addProd").addEventListener("click",()=>{ prodPanel.style.display==="none"?openProdForm():prodPanel.style.display="none"; });
+  document.getElementById("prodAdd").addEventListener("click",()=>{
+    const id=document.getElementById("prodSel").value; if(!id) return;
+    items.push(id); saveItems(); prodPanel.style.display="none"; render();
+    NovaApp.toast(`"${D.ingMap[id].name}" añadido · introduce los precios por proveedor`);
+  });
+
+  renderCards(); render();
 })();
 </script>
 <script src="js/calculator.js"></script>

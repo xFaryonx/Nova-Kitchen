@@ -2,6 +2,7 @@
    NOVA · Landing — motion & interacción
    ============================================================ */
 (function () {
+  const gsap = window.gsap, Lenis = window.Lenis, ScrollTrigger = window.ScrollTrigger;
   const reduce = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
   gsap.registerPlugin(ScrollTrigger);
 

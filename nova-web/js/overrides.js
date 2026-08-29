@@ -26,4 +26,24 @@
   // PVP de la carta
   const mp = read("nova_menu_pvp", {});
   D.menu.forEach(m => { if (mp[m.recipe] != null) m.pvp = mp[m.recipe]; });
+
+  // Recetas editadas (sobre base o propias)
+  const ro = read("nova_recipe_overrides", {});
+  Object.keys(ro).forEach(id => {
+    const o = ro[id];
+    D.recipeMap[id] = o;
+    const idx = D.recipes.findIndex(r => r.id === id);
+    if (idx >= 0) D.recipes[idx] = o; else D.recipes.push(o);
+  });
+
+  // Catálogo de alérgenos (añadir/quitar/renombrar)
+  const al = read("nova_allergens", null);
+  if (al && typeof al === "object") {
+    Object.keys(D.allergenLabels).forEach(k => delete D.allergenLabels[k]);
+    Object.keys(al).forEach(k => D.allergenLabels[k] = al[k]);
+  }
+
+  // Proveedores (lista completa: incluye productos y precios editados)
+  const sup = read("nova_suppliers", null);
+  if (Array.isArray(sup)) { D.suppliers.length = 0; sup.forEach(s => D.suppliers.push(s)); }
 })();

@@ -23,19 +23,23 @@
       <div class="view__head">
         <span class="overline overline--ember">Compras · 09</span>
         <h1>La lista se escribe sola</h1>
-        <p>Nova detecta lo que está bajo mínimos, calcula la cantidad a reponer y asigna el proveedor más económico de cada referencia. Tú solo confirmas.</p>
+        <p>Nova detecta lo que está bajo mínimos, calcula la cantidad a reponer.</p>
       </div>
       <div class="kpis r-app">
         <div class="kpi"><span class="overline">Referencias a reponer</span><strong id="kRef">—</strong></div>
-        <div class="kpi"><span class="overline">Importe pendiente</span><strong id="kPend">—</strong></div>
+        <div class="kpi"><span class="overline">Ítems pendientes</span><strong id="kPend">—</strong></div>
         <div class="kpi"><span class="overline">Proveedores implicados</span><strong id="kSup">—</strong></div>
         <div class="kpi" style="background:var(--ink);color:#fff"><span class="overline" style="color:#8c887c">Total pedido</span><strong id="kTot" style="color:#fff">—</strong></div>
       </div>
       <div class="panel r-app" style="padding:0">
-        <table class="tbl"><thead><tr><th>✓</th><th>Producto</th><th>Reponer</th><th>Mejor proveedor</th><th>€/ud</th><th>Importe</th></tr></thead>
+        <table class="tbl"><thead><tr><th class="no-print">✓</th><th>Producto</th><th>Reponer</th><th>€/ud</th><th>Importe</th><th class="no-print"></th></tr></thead>
         <tbody id="rows"></tbody></table>
       </div>
-      <button class="btn r-app" id="order" style="margin-top:22px" data-testid="generate-order"><span>Generar pedido</span><span class="arw">→</span></button>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:22px">
+        <button class="btn r-app no-print" id="order" data-print data-testid="print-order"><span>Imprimir PDF</span><span class="arw">→</span></button>
+        <button class="btn btn--ghost r-app no-print" id="restore" data-testid="restore-items" style="display:none"><span>Restaurar productos quitados</span></button>
+      </div>
+      <p class="ai-note no-print" style="margin-top:12px">Pulsa la × para quitar un producto solo de esta lista antes de imprimir. No borra ningún dato: al recargar la página la lista se regenera.</p>
     </div>
   </div>
 </div>
@@ -49,19 +53,33 @@
   const need=D.stock.filter(s=>s.qty<s.min).map(s=>{
     let best=null;D.suppliers.forEach(sup=>{const p=sup.prices[s.ing];if(p!=null&&(best===null||p<best.p))best={sup:sup.name,p};});
     const qty=Math.max(s.min*2-s.qty,s.min);
-    return {ing:s.ing,name:D.ingMap[s.ing].name,unit:D.ingMap[s.ing].unit,qty,sup:best?best.sup:"—",price:best?best.p:0,amount:best?best.p*qty:0,checked:true};
+    return {ing:s.ing,name:D.ingMap[s.ing].name,unit:D.ingMap[s.ing].unit,qty,sup:best?best.sup:"—",price:best?best.p:0,amount:best?best.p*qty:0,checked:true,removed:false};
   });
   function render(){
-    document.getElementById("rows").innerHTML=need.map((n,i)=>`<tr style="${n.checked?'':'opacity:.45'}"><td><input type="checkbox" ${n.checked?'checked':''} data-i="${i}" data-testid="buy-${n.ing}" style="width:18px;height:18px;accent-color:var(--ember)"></td><td><b>${n.name}</b></td><td class="r tnum">${num(n.qty,1)} ${n.unit}</td><td>${n.sup}</td><td class="r tnum">${eur(n.price)}</td><td class="r tnum">${eur(n.amount)}</td></tr>`).join("");
-    const active=need.filter(n=>n.checked);
+    const visible=need.map((n,i)=>({n,i})).filter(x=>!x.n.removed);
+    document.getElementById("rows").innerHTML=visible.map(x=>{const n=x.n,i=x.i;
+      return `<tr style="${n.checked?'':'opacity:.45'}"><td class="no-print"><input type="checkbox" ${n.checked?'checked':''} data-i="${i}" data-testid="buy-${n.ing}" style="width:18px;height:18px;accent-color:var(--ember)"></td><td><b>${n.name}</b></td><td class="r tnum">${num(n.qty,1)} ${n.unit}</td><td class="r tnum">${eur(n.price)}</td><td class="r tnum">${eur(n.amount)}</td><td class="no-print"><b data-rm="${i}" data-testid="remove-item-${n.ing}" style="cursor:pointer;color:var(--ember);font-size:1.05rem" title="Quitar de la lista (solo esta vez)">×</b></td></tr>`;
+    }).join("");
+    const active=visible.map(x=>x.n).filter(n=>n.checked);
     const total=active.reduce((a,n)=>a+n.amount,0);
-    document.getElementById("kRef").textContent=need.length;
+    document.getElementById("kRef").textContent=visible.length;
     document.getElementById("kPend").textContent=active.length+" ítems";
     document.getElementById("kSup").textContent=new Set(active.map(n=>n.sup)).size;
     document.getElementById("kTot").textContent=eur(total);
+    const removed=need.filter(n=>n.removed).length;
+    document.getElementById("restore").style.display=removed?"":"none";
+    NovaApp._bindCursor&&NovaApp._bindCursor();
   }
   document.getElementById("rows").addEventListener("change",e=>{const cb=e.target.closest("[data-i]");if(cb){need[+cb.dataset.i].checked=cb.checked;render();}});
-  document.getElementById("order").addEventListener("click",()=>{const n=need.filter(x=>x.checked).length;NovaApp.toast(`Pedido generado · ${n} referencias enviadas a proveedores`);});
+  document.getElementById("rows").addEventListener("click",e=>{
+    const rm=e.target.closest("[data-rm]"); if(!rm) return;
+    need[+rm.dataset.rm].removed=true; render();
+    NovaApp.toast("Producto quitado de la lista · solo esta vez");
+  });
+  document.getElementById("restore").addEventListener("click",()=>{
+    need.forEach(n=>n.removed=false); render();
+    NovaApp.toast("Lista restaurada");
+  });
   render();
 })();
 </script>

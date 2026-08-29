@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only testing of the Nova static app (/nova/*.html) via public preview URL with Playwright. Covered login+onboarding gate, Proveedores (edit/add supplier, add/remove product, inline price edit + localStorage persistence), Compras (columns, Imprimir PDF button, temporary row removal + restore + reload regeneration, checkbox KPI recalculation), Carta (allergen chips, cost, dish -> recipe navigation), Recetas (edit existing base recipe name/steps + persistence), Alergenos (add/remove catalog entries + persistence), APPCC (add control point, status dropdown, editable responsable + persistence). 13/13 requested behaviours verified working. One real UI bug found in Alergenos (label 'undefined' in the suggested labelling report after deleting an allergen still used by ingredients) plus minor stale copy in Compras.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "alergenos.html · #report (Etiquetado sugerido)", "issue": "After deleting an allergen from the catalog (e.g. 'Gluten') the recipe report still lists that allergen but renders its label as 'UNDEFINED' ('undefined — presente en: Placas de lasaña, Harina de trigo'), because D.allergenLabels[a] no longer exists while D.recipeAllergens() keeps returning the key. Fix: filter detected allergens to catalog keys or fall back to the key/original label (carta.html already uses `AL[x]||x`).", "selector": "#report .memitem, #alTitle counter", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "compras.html", "issues": ["Intro copy still says 'asigna el proveedor más económico de cada referencia' although the 'Mejor proveedor' column was removed - stale text", "KPI labelled 'Importe pendiente' displays an item count ('5 ítems') instead of an amount; label/value mismatch"]},
+      {"screen": "alergenos.html", "issues": ["Headline is hardcoded 'Los 14 alérgenos, detectados solos' while the catalog is now editable (count changes when adding/removing)"]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "alergenos.html: guard the label lookup for deleted allergens (use `D.allergenLabels[a] || a`) or exclude non-catalog keys from the detection report/matrix so 'undefined' never renders",
+    "compras.html: update the intro paragraph (no longer assigns cheapest supplier column) and rename the 'Importe pendiente' KPI to 'Ítems pendientes' (or show the pending amount)",
+    "alergenos.html: make the headline dynamic based on catalog size (optional)"
+  ],
+  "critical_code_review_comments": [
+    "overrides.js applies nova_supplier_overrides before replacing D.suppliers with nova_suppliers; the supplier-price override map becomes dead data once nova_suppliers exists. Harmless today (saveSuppliers persists prices) but two sources of truth for the same data — consider dropping nova_supplier_overrides.",
+    "proveedores.html: new supplier id is derived from slug(name); editing a supplier's name does not change its id (correct), but two suppliers with the same slug rely on a Date.now() suffix — fine, just noting.",
+    "appcc.html: the status <select> has both change and blur handlers calling render(); on some browsers blur can fire before change, which could drop the selection. Verified working in Chromium, but binding only 'change' + explicit close would be safer.",
+    "appcc.html: record 'Punto de control' (r.type) is not inline-editable; only status and responsable are, plus adding new control points. If the requirement meant renaming existing records' control point, it is not implemented."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (static app, no backend)", "frontend": "100% of the 13 requested behaviours pass; 1 medium UI bug + 3 minor copy issues found"},
+  "seed_data_creation": "localStorage-only test data created in the ephemeral browser contexts (TEST Editado SA, TEST Nuevo Distri, TEST Trazas QA allergen, TEST Camara pescado control point, 'Crema de calabaza TEST'). Nothing persisted server-side; app files untouched.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "Dominguiito11 / TeAmoFran (from /app/memory/test_credentials.md) - login gate + onboarding (nombre/empresa) worked on every module page",
+  "context_for_next_testing_agent": "App is static under /nova/. Login gate appears on every module page (data-testid login-user/login-pass/login-submit), then onboarding (ob-name/ob-company/ob-submit). Persistence is localStorage, so page.reload() in the same context verifies it. Beware: inner_text returns CSS-uppercased text for .overline/.tag/.panel__title elements — compare case-insensitively. Verified working: proveedores edit/add supplier, add/remove product, price inline edit; compras columns/Imprimir PDF/temporary ×/restore/checkbox KPIs; carta chips+cost+dish link; recetas edit of base recipe; alergenos add/remove; appcc control point/status dropdown/responsable. Remaining known issue: 'undefined' label in alergenos report after deleting an in-use allergen.",
+  "rca_of_the_issue": "alergenos.html renders `D.allergenLabels[a]` for each allergen returned by D.recipeAllergens(id). Deleting a catalog entry removes the label but ingredient allergen arrays in data.js still contain the key, so the template interpolates `undefined`."
+}

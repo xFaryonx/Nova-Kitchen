@@ -135,7 +135,7 @@
     });
 
     // enlazar cursor personalizado si existe
-    if (window.NovaApp && NovaApp._bindCursor) NovaApp._bindCursor();
+    if (window.NovaApp && window.NovaApp._bindCursor) window.NovaApp._bindCursor();
     render();
   }
 

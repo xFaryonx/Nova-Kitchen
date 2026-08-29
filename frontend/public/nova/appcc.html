@@ -36,8 +36,16 @@
           <div class="panel__title">Nuevo registro</div>
           <div class="field" style="margin-bottom:14px"><label>Punto de control</label><select id="cSel" data-testid="appcc-control"></select></div>
           <div class="field" style="margin-bottom:14px"><label>Lectura (ºC)</label><input type="number" id="cVal" step="0.1" value="3.0" data-testid="appcc-value"></div>
+          <div class="field" style="margin-bottom:14px"><label>Responsable</label><input type="text" id="cWho" placeholder="Nombre (automático)" data-testid="appcc-who"></div>
           <div id="limit" class="ai-note" style="margin-bottom:16px"></div>
-          <button class="btn" id="add" data-testid="appcc-add"><span>Registrar control</span><span class="arw">→</span></button>
+          <button class="btn" id="add" data-testid="appcc-add" style="margin-bottom:20px"><span>Registrar control</span><span class="arw">→</span></button>
+          <div class="panel__title" style="border-top:1px dashed var(--line-2);padding-top:16px">Añadir punto de control</div>
+          <div class="field" style="margin-bottom:10px"><label>Nombre</label><input type="text" id="ncName" placeholder="Ej. Cámara pescado" data-testid="ctrl-name"></div>
+          <div class="ctrl-row" style="margin-bottom:12px">
+            <div class="field"><label>Condición</label><select id="ncOp"><option value="<=">≤ (máx.)</option><option value=">=">≥ (mín.)</option></select></div>
+            <div class="field"><label>Límite (ºC)</label><input type="number" id="ncLimit" step="0.1" value="4"></div>
+          </div>
+          <button class="btn btn--ghost" id="addCtrl" data-testid="ctrl-add"><span>+ Añadir punto de control</span></button>
         </div>
         <div class="panel r-app" style="padding:0">
           <table class="tbl"><thead><tr><th>Hora</th><th>Punto de control</th><th>Límite</th><th>Lectura</th><th>Estado</th><th>Responsable</th></tr></thead>
@@ -54,33 +62,68 @@
 (function(){
   NovaApp.init("appcc");
   const D=window.NOVA_DATA;
-  const controls=[
+  const DEF=[
     {name:"Cámara refrigeración",op:"<=",limit:4,unit:"ºC",target:"0–4 ºC"},
     {name:"Congelador",op:"<=",limit:-18,unit:"ºC",target:"≤ -18 ºC"},
     {name:"Recepción mercancía",op:"<=",limit:4,unit:"ºC",target:"≤ 4 ºC"},
     {name:"Aceite freidora",op:"<=",limit:175,unit:"ºC",target:"≤ 175 ºC"},
     {name:"Regeneración caliente",op:">=",limit:65,unit:"ºC",target:"≥ 65 ºC"}
   ];
+  let controls=NovaApp.store.get("nova_appcc_controls", DEF);
   let records=NovaApp.store.get("nova_appcc", D.appcc.slice());
+  const STATUS={ok:"Conforme",alert:"Incidencia",na:"No procede"};
   const cSel=document.getElementById("cSel");
-  cSel.innerHTML=controls.map((c,i)=>`<option value="${i}">${c.name} · ${c.target}</option>`).join("");
+  function fillControls(){ cSel.innerHTML=controls.map((c,i)=>`<option value="${i}">${c.name} · ${c.target}</option>`).join(""); }
+  fillControls();
   function evalC(c,v){return c.op==="<="? v<=c.limit : v>=c.limit;}
-  function showLimit(){const c=controls[+cSel.value];document.getElementById("limit").innerHTML=`Límite crítico: <strong>${c.target}</strong>. Nova marcará la lectura como incidencia si lo supera.`;}
+  function showLimit(){const c=controls[+cSel.value];if(c)document.getElementById("limit").innerHTML=`Límite crítico: <strong>${c.target}</strong>. Nova marcará la lectura como incidencia si lo supera.`;}
+  function tagFor(s){ if(s==="ok")return '<span class="tag tag--ok"><span class="dot"></span>Conforme</span>'; if(s==="na")return '<span class="tag tag--amber"><span class="dot"></span>No procede</span>'; return '<span class="tag tag--warn"><span class="dot"></span>Incidencia</span>'; }
+  function save(){ NovaApp.store.set("nova_appcc",records); }
   function render(){
     const ok=records.filter(r=>r.status==="ok").length;
     document.getElementById("kReg").textContent=records.length;
     document.getElementById("kOk").textContent=ok;
-    document.getElementById("kAl").textContent=records.length-ok;
-    document.getElementById("kPc").textContent=Math.round(ok/records.length*100)+"%";
-    document.getElementById("rows").innerHTML=records.map(r=>`<tr><td class="tnum">${r.when}</td><td><b>${r.type}</b></td><td>${r.target||"—"}</td><td class="r tnum">${r.value}</td><td>${r.status==="ok"?'<span class="tag tag--ok"><span class="dot"></span>Conforme</span>':'<span class="tag tag--warn"><span class="dot"></span>Incidencia</span>'}</td><td>${r.who}</td></tr>`).join("");
+    document.getElementById("kAl").textContent=records.filter(r=>r.status==="alert").length;
+    document.getElementById("kPc").textContent=records.length?Math.round(ok/records.length*100)+"%":"—";
+    document.getElementById("rows").innerHTML=records.map((r,i)=>`<tr data-i="${i}"><td class="tnum">${r.when}</td><td class="ptype editable" data-i="${i}" title="Editar punto de control"><b>${r.type}</b></td><td>${r.target||"—"}</td><td class="r tnum">${r.value}</td><td class="st" data-i="${i}" style="cursor:pointer" title="Cambiar estado">${tagFor(r.status)}</td><td class="who editable" data-i="${i}" title="Editar responsable">${r.who}</td></tr>`).join("");
+    NovaApp._bindCursor&&NovaApp._bindCursor();
   }
   cSel.addEventListener("change",showLimit);
   document.getElementById("add").addEventListener("click",()=>{
-    const c=controls[+cSel.value],v=parseFloat(document.getElementById("cVal").value);
-    const ok=evalC(c,v);
-    records.unshift({type:c.name,target:c.target,value:v.toFixed(1)+" "+c.unit,status:ok?"ok":"alert",when:new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}),who:NovaApp.profile().name.split(" ")[0]});
-    NovaApp.store.set("nova_appcc",records);render();
+    const c=controls[+cSel.value];if(!c)return;const v=parseFloat(document.getElementById("cVal").value);
+    const ok=evalC(c,v); const who=(document.getElementById("cWho").value||"").trim()||NovaApp.profile().name.split(" ")[0];
+    records.unshift({type:c.name,target:c.target,value:v.toFixed(1)+" "+c.unit,status:ok?"ok":"alert",when:new Date().toLocaleTimeString("es-ES",{hour:"2-digit",minute:"2-digit"}),who});
+    save();render();
     NovaApp.toast(ok?"Registro conforme añadido":"¡Incidencia! Lectura fuera de límite");
+  });
+  document.getElementById("addCtrl").addEventListener("click",()=>{
+    const name=(document.getElementById("ncName").value||"").trim(); if(!name){NovaApp.toast("Ponle nombre al punto de control");return;}
+    const op=document.getElementById("ncOp").value, limit=parseFloat(document.getElementById("ncLimit").value)||0;
+    const target=(op==="<="?"≤ ":"≥ ")+limit+" ºC";
+    controls.push({name,op,limit,unit:"ºC",target}); NovaApp.store.set("nova_appcc_controls",controls);
+    fillControls(); cSel.value=controls.length-1; showLimit();
+    document.getElementById("ncName").value="";
+    NovaApp.toast("Punto de control añadido");
+  });
+  document.getElementById("rows").addEventListener("click",e=>{
+    const st=e.target.closest(".st"); if(st){
+      const i=+st.dataset.i; if(st.querySelector("select"))return;
+      const sel=document.createElement("select"); sel.className="cell-input"; sel.style.textAlign="left";
+      sel.innerHTML=Object.keys(STATUS).map(k=>`<option value="${k}" ${records[i].status===k?"selected":""}>${STATUS[k]}</option>`).join("");
+      st.innerHTML=""; st.appendChild(sel); sel.focus();
+      sel.addEventListener("change",()=>{records[i].status=sel.value;save();render();});
+      sel.addEventListener("blur",()=>render());
+      return;
+    }
+    const ptype=e.target.closest(".ptype"); if(ptype){
+      const i=+ptype.dataset.i;
+      NovaApp.inlineEdit(ptype,{type:"text",value:records[i].type,onCommit:v=>{records[i].type=(v||"").trim()||records[i].type;save();render();}});
+      return;
+    }
+    const who=e.target.closest(".who"); if(who){
+      const i=+who.dataset.i;
+      NovaApp.inlineEdit(who,{type:"text",value:records[i].who,onCommit:v=>{records[i].who=(v||"").trim()||records[i].who;save();render();}});
+    }
   });
   showLimit();render();
 })();

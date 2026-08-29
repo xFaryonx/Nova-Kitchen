@@ -2,6 +2,7 @@
    NOVA · Consola compartida (proceso IA + render de resultado)
    ============================================================ */
 window.NovaConsole = (function () {
+  const gsap = window.gsap;
   const STEPS_HTML = steps => `
     <div class="ai-process">
       ${steps.map((s,i)=>`<div class="ai-step" data-i="${i}">
